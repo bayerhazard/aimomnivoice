@@ -185,6 +185,40 @@ def _safe_name(name: str) -> str:
     return name
 
 
+def _normalize_ref(raw: bytes, ext: str):
+    """Return (bytes, ext). Non-WAV reference audio is converted to 16-bit PCM
+    WAV @ 24 kHz mono via ffmpeg so inference decodes it with soundfile (fast)
+    instead of the slow audioread fallback. Falls back to the original file
+    if ffmpeg is unavailable or fails."""
+    if ext == ".wav":
+        return raw, ext
+    import subprocess
+    import tempfile
+    try:
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tin:
+            tin.write(raw)
+            tin_name = tin.name
+        out_name = tin_name + ".wav"
+        try:
+            subprocess.run(
+                ["ffmpeg", "-y", "-loglevel", "error", "-i", tin_name,
+                 "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", out_name],
+                check=True, capture_output=True, timeout=60,
+            )
+            with open(out_name, "rb") as f:
+                out = f.read()
+            if out:
+                logger.info(f"ref-audio normalized {ext} -> .wav ({len(out)} bytes)")
+                return out, ".wav"
+        finally:
+            for p in (tin_name, out_name):
+                if os.path.isfile(p):
+                    os.unlink(p)
+    except Exception as e:
+        logger.warning(f"ffmpeg ref-audio conversion failed ({e}); storing original {ext}")
+    return raw, ext
+
+
 @app.get("/v1/audio/clones", tags=["Voice Clones"])
 async def list_clones():
     """List registered named voice clones."""
@@ -218,6 +252,7 @@ async def register_clone(
     ext = (os.path.splitext(ref_audio.filename or "")[1] or ".wav").lower()
     if ext not in _AUDIO_EXTS:
         ext = ".wav"
+    raw, ext = _normalize_ref(raw, ext)
     wav_path = os.path.join(VOICES_DIR, n + ext)
     with open(wav_path, "wb") as f:
         f.write(raw)

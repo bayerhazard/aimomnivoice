@@ -14,7 +14,7 @@ data:
     import tempfile
     from typing import Optional, Literal
     from contextlib import asynccontextmanager
-
+    
     import torch
     import soundfile as sf
     import numpy as np
@@ -22,41 +22,41 @@ data:
     from fastapi.responses import Response, HTMLResponse
     from fastapi.middleware.cors import CORSMiddleware
     from pydantic import BaseModel, Field
-
+    
     logging.basicConfig(level=logging.INFO)
     logger = logging.getLogger(__name__)
-
+    
     # ── Global model ──────────────────────────────────────────────────────────────
     omnivoice_model = None
-
-
+    
+    
     def get_device():
         if torch.cuda.is_available():
             return "cuda:0"
         if torch.backends.mps.is_available():
             return "mps"
         return "cpu"
-
-
+    
+    
     def load_model():
         global omnivoice_model
         from omnivoice import OmniVoice
-
+    
         model_id = os.getenv("MODEL_ID", "k2-fsa/OmniVoice")
         device   = os.getenv("DEVICE", get_device())
         dtype    = torch.float16 if device != "cpu" else torch.float32
-
+    
         logger.info(f"Loading OmniVoice model '{model_id}' on {device} ({dtype})...")
         omnivoice_model = OmniVoice.from_pretrained(model_id, device_map=device, dtype=dtype)
         logger.info("Model loaded ✓")
-
-
+    
+    
     @asynccontextmanager
     async def lifespan(app: FastAPI):
         load_model()
         yield
-
-
+    
+    
     # ── App ───────────────────────────────────────────────────────────────────────
     app = FastAPI(
         title="OmniVoice FastAPI",
@@ -73,19 +73,19 @@ data:
         version="0.1.0",
         lifespan=lifespan,
     )
-
+    
     app.add_middleware(
         CORSMiddleware,
         allow_origins=["*"],
         allow_methods=["*"],
         allow_headers=["*"],
     )
-
+    
     # ── Types ─────────────────────────────────────────────────────────────────────
     AudioFormat = Literal["wav", "mp3", "flac", "ogg", "opus"]
-
+    
     # ── Schemas ───────────────────────────────────────────────────────────────────
-
+    
     class SpeechRequest(BaseModel):
         # OpenAI-compatible fields
         model: str = Field("omnivoice", description="Model name (ignored)")
@@ -99,13 +99,13 @@ data:
             ),
         )
         response_format: AudioFormat = Field("wav", description="Output audio format")
-
+    
         # Language
         language_id: Optional[str] = Field(
             None,
             description="ISO language ID (e.g. 'pt', 'en', 'zh'). Auto-detected from text if omitted. See GET /v1/languages.",
         )
-
+    
         # Duration & Speed (priority: duration > speed)
         speed: Optional[float] = Field(
             None, ge=0.1, le=10.0,
@@ -115,28 +115,28 @@ data:
             None, ge=0.1,
             description="Fixed output duration in seconds. Overrides speed when set.",
         )
-
+    
         # Decoding
         num_step: int = Field(32, ge=1, le=128, description="Diffusion steps. Higher = better quality & slower. Use 16 for fast inference.")
         guidance_scale: float = Field(2.0, ge=0.0, le=20.0, description="Classifier-free guidance scale.")
         denoise: bool = Field(True, description="Prepend <|denoise|> token for cleaner speech.")
         t_shift: float = Field(0.1, description="Time-step shift for the noise schedule.")
-
+    
         # Sampling
         position_temperature: float = Field(5.0, description="Temperature for mask-position selection. 0 = greedy/deterministic.")
         class_temperature: float = Field(0.0, description="Temperature for token sampling at each step. 0 = greedy/deterministic.")
         layer_penalty_factor: float = Field(5.0, description="Penalty for deeper codebook layers (encourages lower layers to unmask first).")
-
+    
         # Post-processing
         postprocess_output: bool = Field(True, description="Remove long silences from generated audio.")
-
+    
         # Long-form generation
         audio_chunk_duration: float = Field(15.0, description="Target chunk duration (s) for long-form text splitting.")
         audio_chunk_threshold: float = Field(30.0, description="Estimated duration (s) above which chunking is activated.")
-
-
+    
+    
     # ── Helpers ───────────────────────────────────────────────────────────────────
-
+    
     VOICE_PRESETS: dict = {
         "auto":      None,
         "female":    "female",
@@ -149,31 +149,31 @@ data:
         "elderly":   "elderly, female",
         "whisper":   "female, whisper",
     }
-
-
+    
+    
     def resolve_instruct(voice: str) -> Optional[str]:
         if voice in VOICE_PRESETS:
             return VOICE_PRESETS[voice]
         return voice if voice and voice != "auto" else None
-
-
+    
+    
     # ── Named voice clones (voice: "clone:<name>") ────────────────────────────────
     # Reference audio lives in VOICES_DIR: <name>.<ext> (wav/mp3/m4a/flac/ogg/opus)
     # plus optional <name>.txt (exact transcript of the reference clip; Whisper
     # auto-transcribes if absent).
-
+    
     VOICES_DIR = os.getenv("VOICE_CLONES_DIR", "/app/models/voices")
     _AUDIO_EXTS = (".wav", ".mp3", ".m4a", ".flac", ".ogg", ".opus")
-
-
+    
+    
     def _clone_audio(name: str):
         for ext in _AUDIO_EXTS:
             p = os.path.join(VOICES_DIR, f"{name}{ext}")
             if os.path.isfile(p):
                 return p
         return None
-
-
+    
+    
     def resolve_clone(name: str):
         audio = _clone_audio(name)
         if audio is None:
@@ -184,15 +184,49 @@ data:
             with open(txt, encoding="utf-8") as f:
                 ref_text = f.read().strip() or None
         return audio, ref_text
-
-
+    
+    
     def _safe_name(name: str) -> str:
         name = (name or "").strip().lower()
         if not name or not all(c.isalnum() or c in "-_" for c in name):
             raise HTTPException(400, "Voice name must be alphanumeric/-/_ (e.g. 'justus')")
         return name
-
-
+    
+    
+    def _normalize_ref(raw: bytes, ext: str):
+        """Return (bytes, ext). Non-WAV reference audio is converted to 16-bit PCM
+        WAV @ 24 kHz mono via ffmpeg so inference decodes it with soundfile (fast)
+        instead of the slow audioread fallback. Falls back to the original file
+        if ffmpeg is unavailable or fails."""
+        if ext == ".wav":
+            return raw, ext
+        import subprocess
+        import tempfile
+        try:
+            with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tin:
+                tin.write(raw)
+                tin_name = tin.name
+            out_name = tin_name + ".wav"
+            try:
+                subprocess.run(
+                    ["ffmpeg", "-y", "-loglevel", "error", "-i", tin_name,
+                     "-ac", "1", "-ar", "24000", "-c:a", "pcm_s16le", out_name],
+                    check=True, capture_output=True, timeout=60,
+                )
+                with open(out_name, "rb") as f:
+                    out = f.read()
+                if out:
+                    logger.info(f"ref-audio normalized {ext} -> .wav ({len(out)} bytes)")
+                    return out, ".wav"
+            finally:
+                for p in (tin_name, out_name):
+                    if os.path.isfile(p):
+                        os.unlink(p)
+        except Exception as e:
+            logger.warning(f"ffmpeg ref-audio conversion failed ({e}); storing original {ext}")
+        return raw, ext
+    
+    
     @app.get("/v1/audio/clones", tags=["Voice Clones"])
     async def list_clones():
         """List registered named voice clones."""
@@ -209,8 +243,8 @@ data:
                         "size_bytes": os.path.getsize(os.path.join(VOICES_DIR, f)),
                     })
         return {"clones": clones, "dir": VOICES_DIR}
-
-
+    
+    
     @app.post("/v1/audio/clones", tags=["Voice Clones"])
     async def register_clone(
         name: str = Form(..., description="Voice name (alphanumeric/-/_), e.g. 'justus'"),
@@ -226,6 +260,7 @@ data:
         ext = (os.path.splitext(ref_audio.filename or "")[1] or ".wav").lower()
         if ext not in _AUDIO_EXTS:
             ext = ".wav"
+        raw, ext = _normalize_ref(raw, ext)
         wav_path = os.path.join(VOICES_DIR, n + ext)
         with open(wav_path, "wb") as f:
             f.write(raw)
@@ -233,8 +268,8 @@ data:
             with open(os.path.join(VOICES_DIR, n + ".txt"), "w", encoding="utf-8") as f:
                 f.write(ref_text.strip())
         return {"success": True, "name": n, "bytes": len(raw), "ref_text": bool(ref_text)}
-
-
+    
+    
     @app.delete("/v1/audio/clones/{name}", tags=["Voice Clones"])
     async def delete_clone(name: str):
         n = _safe_name(name)
@@ -246,11 +281,11 @@ data:
         if os.path.isfile(txt):
             os.remove(txt)
         return {"success": True, "name": n}
-
-
+    
+    
     def audio_to_bytes(audio: np.ndarray, sample_rate: int, fmt: str) -> bytes:
         """Convert np.ndarray (T,) at sample_rate Hz to bytes.
-
+    
         OmniVoice returns float32 arrays. soundfile defaults to 32-bit float WAV
         which most browsers cannot play in an <audio> element. Force PCM_16 so
         every major browser (Chrome, Firefox, Safari) can play the file inline.
@@ -267,8 +302,8 @@ data:
             sf.write(buf, audio, sample_rate, format="WAV", subtype="PCM_16")
         buf.seek(0)
         return buf.read()
-
-
+    
+    
     MIME = {
         "wav":  "audio/wav",
         "mp3":  "audio/mpeg",
@@ -276,8 +311,8 @@ data:
         "ogg":  "audio/ogg",
         "opus": "audio/opus",
     }
-
-
+    
+    
     # ── OpenAPI response schema shared by all audio endpoints ───────────────────
     _AUDIO_RESPONSES = {
         200: {
@@ -289,25 +324,25 @@ data:
             "description": "Audio file. Swagger UI renders an inline player for WAV responses.",
         }
     }
-
-
+    
+    
     # ── /v1/audio/speech — OpenAI-compatible TTS ──────────────────────────────────
-
+    
     @app.post("/v1/audio/speech", tags=["OpenAI Compatible"], response_class=Response, responses=_AUDIO_RESPONSES)
     async def openai_tts(req: SpeechRequest):
         """
         OpenAI-compatible speech synthesis. Drop-in replacement: set `base_url="http://host:8880/v1"`.
-
+    
         **Voice modes** (via `voice` field):
         - Preset: `auto`, `female`, `male`, `female_en`, `male_en`, `female_br`, `male_br`, `child`, `elderly`, `whisper`
         - Free-form instruct string: `"female, low pitch, british accent"`
         - `"auto"` or omit: model picks a voice automatically
-
+    
         **Priority**: `duration` > `speed`.
         """
         if not omnivoice_model:
             raise HTTPException(503, "Model not loaded")
-
+    
         instruct = resolve_instruct(req.voice) if not (req.voice or "").startswith("clone:") else None
         clone_ref = resolve_clone(req.voice[6:].strip()) if (req.voice or "").startswith("clone:") else None
         t0 = time.time()
@@ -338,27 +373,27 @@ data:
                 kwargs["duration"] = req.duration
             elif req.speed is not None:
                 kwargs["speed"] = req.speed
-
+    
             audio_list = omnivoice_model.generate(**kwargs)
         except Exception as e:
             logger.exception("TTS generation failed")
             raise HTTPException(500, str(e))
-
+    
         audio = audio_list[0]
         elapsed = time.time() - t0
         duration_s = len(audio) / 24000
         logger.info(f"TTS: {duration_s:.2f}s audio in {elapsed:.2f}s (RTF={elapsed/duration_s:.3f})")
-
+    
         data = audio_to_bytes(audio, 24000, req.response_format)
         return Response(
             content=data,
             media_type=MIME.get(req.response_format, "audio/wav"),
             headers={"Content-Length": str(len(data)), "X-RTF": str(round(elapsed / duration_s, 4))},
         )
-
-
+    
+    
     # ── /v1/audio/clone — Voice Cloning ──────────────────────────────────────────
-
+    
     @app.post("/v1/audio/clone", tags=["Voice Cloning"], response_class=Response, responses=_AUDIO_RESPONSES)
     async def clone_voice(
         text: str = Form(..., description="Text to synthesize in the cloned voice"),
@@ -384,22 +419,22 @@ data:
     ):
         """
         Zero-shot voice cloning from a reference audio file.
-
+    
         Upload any WAV/MP3/M4A reference (3–10s recommended) and the text to synthesize.
-
+    
         **Tips**:
         - Set `language_id='pt'` when synthesizing Portuguese to avoid European accent.
         - Leave `ref_text` blank to auto-transcribe via Whisper (slower on first call).
         - Use a 3–10s clean reference clip for best cloning quality.
-
+    
         **Priority**: `duration` > `speed`.
         """
         if not omnivoice_model:
             raise HTTPException(503, "Model not loaded")
-
+    
         if not ref_audio and not ref_audio_base64:
             raise HTTPException(400, "Provide ref_audio (file upload) or ref_audio_base64 (base64 string)")
-
+    
         if ref_audio_base64:
             try:
                 # Strip data URI prefix if present (e.g. "data:audio/webm;base64,...")
@@ -417,7 +452,7 @@ data:
             with tempfile.NamedTemporaryFile(suffix=suffix, delete=False) as tmp:
                 tmp.write(await ref_audio.read())
                 tmp_path = tmp.name
-
+    
         try:
             kwargs: dict = {
                 "text":                  text,
@@ -437,14 +472,14 @@ data:
                 kwargs["duration"] = duration
             elif speed is not None:
                 kwargs["speed"] = speed
-
+    
             audio_list = omnivoice_model.generate(**kwargs)
         except Exception as e:
             logger.exception("Clone generation failed")
             raise HTTPException(500, str(e))
         finally:
             os.unlink(tmp_path)
-
+    
         audio = audio_list[0]
         logger.info(f"Clone: generated {len(audio)/24000:.2f}s audio")
         data = audio_to_bytes(audio, 24000, response_format)
@@ -453,10 +488,10 @@ data:
             media_type=MIME.get(response_format, "audio/wav"),
             headers={"Content-Length": str(len(data))},
         )
-
-
+    
+    
     # ── /v1/audio/design — Voice Design ──────────────────────────────────────────
-
+    
     @app.post("/v1/audio/design", tags=["Voice Design"], response_class=Response, responses=_AUDIO_RESPONSES)
     async def design_voice(
         text: str = Form(..., description="Text to synthesize"),
@@ -486,15 +521,15 @@ data:
     ):
         """
         Design a voice using natural language attribute descriptions — no reference audio needed.
-
+    
         **Note**: Voice Design was trained on Chinese and English data.
         It generalises to other languages but may produce unstable results for low-resource languages.
-
+    
         **Priority**: `duration` > `speed`.
         """
         if not omnivoice_model:
             raise HTTPException(503, "Model not loaded")
-
+    
         try:
             kwargs: dict = {
                 "text":                  text,
@@ -511,12 +546,12 @@ data:
                 kwargs["duration"] = duration
             elif speed is not None:
                 kwargs["speed"] = speed
-
+    
             audio_list = omnivoice_model.generate(**kwargs)
         except Exception as e:
             logger.exception("Design generation failed")
             raise HTTPException(500, str(e))
-
+    
         audio = audio_list[0]
         logger.info(f"Design: generated {len(audio)/24000:.2f}s audio")
         data = audio_to_bytes(audio, 24000, response_format)
@@ -525,15 +560,15 @@ data:
             media_type=MIME.get(response_format, "audio/wav"),
             headers={"Content-Length": str(len(data))},
         )
-
-
+    
+    
     # ── Info endpoints ────────────────────────────────────────────────────────────
-
+    
     @app.get("/v1/languages", tags=["Info"])
     async def list_languages():
         """
         Common language IDs to pass as `language_id` in any generation endpoint.
-
+    
         Full list (646 languages + training hours):
         https://github.com/k2-fsa/OmniVoice/blob/master/docs/languages.md
         """
@@ -555,8 +590,8 @@ data:
             ],
             "full_list_url": "https://github.com/k2-fsa/OmniVoice/blob/master/docs/languages.md",
         }
-
-
+    
+    
     @app.get("/v1/models", tags=["Info"])
     async def list_models():
         """List available models (OpenAI-compatible)."""
@@ -564,8 +599,8 @@ data:
             "object": "list",
             "data": [{"id": "omnivoice", "object": "model", "owned_by": "k2-fsa"}],
         }
-
-
+    
+    
     @app.get("/v1/voices", tags=["Info"])
     async def list_voices():
         """List voice presets for the `voice` field in /v1/audio/speech."""
@@ -584,8 +619,8 @@ data:
             ],
             "note": "You can also pass any free-form instruct string as voice, e.g. 'female, low pitch, british accent'",
         }
-
-
+    
+    
     @app.get("/health", tags=["Info"])
     async def health():
         """Health check — reports model load status and device."""
@@ -595,12 +630,13 @@ data:
             "device": get_device(),
             "cuda_available": torch.cuda.is_available(),
         }
-
-
+    
+    
     # ── Web UI ────────────────────────────────────────────────────────────────────
-
+    
     @app.get("/web", response_class=HTMLResponse, include_in_schema=False)
     async def web_ui():
         web_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "web", "index.html")
         with open(web_path) as f:
             return f.read()
+    

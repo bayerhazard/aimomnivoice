@@ -156,6 +156,35 @@ data:
     }
     select:focus{border-color:var(--rand-marke)}
     select option,select optgroup{background:var(--flaeche-1)}
+    .voice-drop{position:relative}
+    .voice-btn{
+      width:100%;display:flex;align-items:center;justify-content:space-between;gap:var(--am-raum-2);
+      padding:var(--am-raum-2) var(--am-raum-3);border-radius:0.375rem;
+      border:1px solid var(--flaeche-2);background:var(--flaeche-2);color:var(--text);
+      font-family:var(--schrift);font-size:0.9rem;text-align:left;cursor:pointer;
+      transition:border-color 120ms var(--kurve);
+    }
+    .voice-btn:hover{border-color:var(--rand-marke)}
+    .voice-btn svg{color:var(--text-dim);flex-shrink:0}
+    .voice-list{
+      position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:20;
+      background:var(--flaeche-1);border:1px solid var(--flaeche-2);border-radius:0.375rem;
+      max-height:16rem;overflow-y:auto;margin:0;padding:0;list-style:none;
+    }
+    .voice-opt{
+      display:flex;align-items:center;justify-content:space-between;gap:var(--am-raum-2);
+      padding:var(--am-raum-2) var(--am-raum-3);font-size:0.9rem;color:var(--text);cursor:pointer;
+      transition:background-color 120ms var(--kurve);
+    }
+    .voice-opt:hover{background:var(--flaeche-2)}
+    .voice-opt[aria-selected="true"]{color:var(--gold);font-weight:600}
+    .voice-sep{border-top:1px solid var(--flaeche-2);margin:var(--am-raum-1) 0}
+    .voice-opt .x{
+      border:none;background:transparent;color:var(--text-dim);cursor:pointer;
+      font-size:1.05rem;line-height:1;padding:0 var(--am-raum-1);border-radius:0.25rem;
+      transition:color 120ms var(--kurve),background-color 120ms var(--kurve);
+    }
+    .voice-opt .x:hover{color:var(--fehler);background:var(--flaeche-2)}
     label.fld{display:block;font-size:0.72rem;font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin:var(--am-raum-3) 0 var(--am-raum-1)}
     label.fld:first-of-type{margin-top:0}
     input[type=file]{font-family:var(--mono);font-size:0.78rem;color:var(--text-dim);width:100%}
@@ -319,20 +348,14 @@ data:
 
         <section class="card" aria-labelledby="voiceTitle">
           <div class="card-title" id="voiceTitle"><span class="icon">◍</span><span data-i18n="voiceTitle">Stimme</span></div>
-          <label class="fld" for="voiceSelect" data-i18n="voiceLbl">Stimme (Preset)</label>
-          <select id="voiceSelect" aria-label="Stimme">
-            <option value="auto">Auto</option>
-            <option value="female" selected>Weiblich</option>
-            <option value="male">Männlich</option>
-            <option value="child">Kind</option>
-            <option value="elderly">Ältere Stimme</option>
-            <option value="whisper">Flüstern</option>
-            <option value="female_en">Weiblich (US)</option>
-            <option value="male_en">Männlich (US)</option>
-            <option value="female_br">Weiblich (UK)</option>
-            <option value="male_br">Männlich (UK)</option>
-            <optgroup id="cloneGroup" hidden></optgroup>
-          </select>
+          <label class="fld" data-i18n="voiceLbl">Stimme (Preset)</label>
+          <div class="voice-drop" id="voiceDrop">
+            <button type="button" class="voice-btn" id="voiceBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Stimme">
+              <span id="voiceBtnLabel">Weiblich</span>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
+            </button>
+            <div class="voice-list" id="voiceList" role="listbox" hidden></div>
+          </div>
           <label class="fld" for="instructInput" data-i18n="instructLbl">Beschreibung</label>
           <input type="text" id="instructInput" data-i18n-ph="instructPh" placeholder="">
           <div class="hint" data-i18n="ttsHint">Freie Beschreibung überschreibt die Preset-Auswahl.</div>
@@ -373,7 +396,7 @@ data:
       de: {
         subtitle: 'OmniVoice 0.6B — 600+ Sprachen, Voice Design & Cloning, 24 kHz',
         textTitle: 'Was soll ich sagen?', ttsPlaceholder: 'Text zum Sprechen eingeben…',
-        voiceTitle: 'Stimme', voiceLbl: 'Stimme (Preset)',
+        voiceTitle: 'Voice Design', voiceLbl: 'Stimme (Preset)',
         instructLbl: 'Beschreibung', instructPh: 'Freie Beschreibung, z. B. "weiblich, ruhig"',
         ttsHint: 'Freie Beschreibung überschreibt die Preset-Auswahl.',
         cloneTitle: 'Voice Cloning',
@@ -392,13 +415,14 @@ data:
         errNoRef: 'Bitte Referenz-Audio auswählen oder aufnehmen.',
         errNoCloneName: 'Bitte Klon-Name eingeben.',
         micError: 'Mikrofon nicht verfügbar', micDecodeErr: 'Aufnahme konnte nicht verarbeitet werden.',
-        clonePrefix: 'Klon', generating: 'Audio wird erzeugt…',
+        clonePrefix: 'Klon', deleteCloneTitle: 'Klon löschen', cloneDeleted: 'Klon gelöscht.',
+        generating: 'Audio wird erzeugt…',
         done: 'Fertig', size: 'Größe', emptyAudio: '(leeres Audio)',
       },
       en: {
         subtitle: 'OmniVoice 0.6B — 600+ languages, voice design & cloning, 24 kHz',
         textTitle: 'What should I say?', ttsPlaceholder: 'Enter text to synthesize…',
-        voiceTitle: 'Voice', voiceLbl: 'Voice (preset)',
+        voiceTitle: 'Voice Design', voiceLbl: 'Voice (preset)',
         instructLbl: 'Description', instructPh: 'Free-form description, e.g. "female, calm"',
         ttsHint: 'A free-form description overrides the preset selection.',
         cloneTitle: 'Voice Cloning',
@@ -417,7 +441,8 @@ data:
         errNoRef: 'Please select or record a reference audio.',
         errNoCloneName: 'Please enter a clone name.',
         micError: 'Microphone unavailable', micDecodeErr: 'Could not process the recording.',
-        clonePrefix: 'Clone', generating: 'Generating audio…',
+        clonePrefix: 'Clone', deleteCloneTitle: 'Delete clone', cloneDeleted: 'Clone deleted.',
+        generating: 'Generating audio…',
         done: 'Done', size: 'Size', emptyAudio: '(empty audio)',
       }
     };
@@ -435,8 +460,7 @@ data:
       document.getElementById('langDE').classList.toggle('active', LANG === 'de');
       document.getElementById('langEN').classList.toggle('active', LANG === 'en');
       document.documentElement.lang = LANG;
-      const group = document.getElementById('cloneGroup');
-      if (group && !group.hidden) group.label = I18N[LANG].clonePrefix;
+      renderVoiceList();
     }
     document.getElementById('langDE').addEventListener('click', () => { LANG = 'de'; applyLang(); });
     document.getElementById('langEN').addEventListener('click', () => { LANG = 'en'; applyLang(); });
@@ -466,21 +490,93 @@ data:
       }
     }
 
+    // ── Voice-Dropdown (Presets + Clones mit Löschen) ────────────────────────────
+    const PRESETS = [
+      ['auto', 'Auto'], ['female', 'Weiblich'], ['male', 'Männlich'], ['child', 'Kind'],
+      ['elderly', 'Ältere Stimme'], ['whisper', 'Flüstern'],
+      ['female_en', 'Weiblich (US)'], ['male_en', 'Männlich (US)'],
+      ['female_br', 'Weiblich (UK)'], ['male_br', 'Männlich (UK)'],
+    ];
+    let currentVoice = 'female';
+    let clones = [];
+    const voiceBtn = document.getElementById('voiceBtn');
+    const voiceBtnLabel = document.getElementById('voiceBtnLabel');
+    const voiceList = document.getElementById('voiceList');
+
+    function voiceLabelFor(val) {
+      if (val.startsWith('clone:')) return I18N[LANG].clonePrefix + ': ' + val.slice(6);
+      const p = PRESETS.find(p => p[0] === val);
+      return p ? p[1] : val;
+    }
+
+    function renderVoiceList() {
+      voiceList.innerHTML = '';
+      PRESETS.forEach(([val, label]) => {
+        const d = document.createElement('div');
+        d.className = 'voice-opt';
+        d.setAttribute('role', 'option');
+        d.setAttribute('aria-selected', String(val === currentVoice));
+        d.textContent = label;
+        d.addEventListener('click', () => { currentVoice = val; renderVoiceList(); closeVoiceList(); });
+        voiceList.appendChild(d);
+      });
+      if (clones.length) {
+        const sep = document.createElement('div');
+        sep.className = 'voice-sep';
+        voiceList.appendChild(sep);
+        clones.forEach(c => {
+          const val = 'clone:' + c.name;
+          const d = document.createElement('div');
+          d.className = 'voice-opt';
+          d.setAttribute('role', 'option');
+          d.setAttribute('aria-selected', String(val === currentVoice));
+          const s = document.createElement('span');
+          s.textContent = I18N[LANG].clonePrefix + ': ' + c.name;
+          d.appendChild(s);
+          const x = document.createElement('button');
+          x.type = 'button';
+          x.className = 'x';
+          x.textContent = '×';
+          x.title = I18N[LANG].deleteCloneTitle;
+          x.setAttribute('aria-label', I18N[LANG].deleteCloneTitle + ' ' + c.name);
+          x.addEventListener('click', e => { e.stopPropagation(); deleteClone(c.name); });
+          d.appendChild(x);
+          d.addEventListener('click', () => { currentVoice = val; renderVoiceList(); closeVoiceList(); });
+          voiceList.appendChild(d);
+        });
+      }
+      voiceBtnLabel.textContent = voiceLabelFor(currentVoice);
+    }
+
+    function openVoiceList() { voiceList.hidden = false; voiceBtn.setAttribute('aria-expanded', 'true'); }
+    function closeVoiceList() { voiceList.hidden = true; voiceBtn.setAttribute('aria-expanded', 'false'); }
+
+    voiceBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      if (voiceList.hidden) openVoiceList(); else closeVoiceList();
+    });
+    document.addEventListener('click', e => {
+      if (!document.getElementById('voiceDrop').contains(e.target)) closeVoiceList();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeVoiceList(); });
+
+    async function deleteClone(name) {
+      try {
+        const res = await fetch('/v1/audio/clones/' + encodeURIComponent(name), { method: 'DELETE' });
+        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || e.message || ('HTTP ' + res.status)); }
+        if (currentVoice === 'clone:' + name) currentVoice = 'female';
+        await loadClones();
+        setStatus('success', I18N[LANG].cloneDeleted);
+      } catch (e) { setStatus('error', 'Error: ' + e.message); }
+    }
+
     async function loadClones() {
       try {
         const res = await fetch('/v1/audio/clones');
         if (!res.ok) return;
         const d = await res.json();
-        const group = document.getElementById('cloneGroup');
-        group.innerHTML = '';
-        (d.clones || []).forEach(c => {
-          const o = document.createElement('option');
-          o.value = 'clone:' + c.name;
-          o.textContent = I18N[LANG].clonePrefix + ': ' + c.name;
-          group.appendChild(o);
-        });
-        group.hidden = !(d.clones || []).length;
-        if (!group.hidden) group.label = I18N[LANG].clonePrefix;
+        clones = d.clones || [];
+        renderVoiceList();
       } catch (e) { /* clone registry optional */ }
     }
 
@@ -592,7 +688,7 @@ data:
       const text = document.getElementById('textInput').value.trim();
       if (!text) { setStatus('error', I18N[LANG].errNoText); return; }
       const instruct = document.getElementById('instructInput').value.trim();
-      const voice = instruct || document.getElementById('voiceSelect').value;
+      const voice = instruct || currentVoice;
       const btn = document.getElementById('generateBtn');
       btn.disabled = true; btn.textContent = I18N[LANG].genBtnBusy;
       audioWrap.classList.remove('show'); setLoading(I18N[LANG].generating);
