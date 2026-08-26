@@ -1,0 +1,20 @@
+apiVersion: v2
+name: aimomnivoice
+description: AIM OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
+type: application
+version: 26.08.2
+appVersion: "26.08.2"
+keywords:
+  - ai
+  - tts
+  - text-to-speech
+  - voice-cloning
+  - omnivoice
+  - k2-fsa
+  - nvidia
+home: https://github.com/bayerhazard/aimomnivoice
+sources:
+  - https://github.com/bayerhazard/aimomnivoice
+maintainers:
+  - name: Aimighty
+    email: marc@aimighty.de

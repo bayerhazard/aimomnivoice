@@ -1,0 +1,82 @@
+image:
+  # Digest-pinned amd64 manifest of diogod2r/omnivoice-fastapi:latest (2026-04-14)
+  full: "diogod2r/omnivoice-fastapi@sha256:e883f88220c08aaa061dd90204b65a6f1c966d723186a6b982c164c0a3473354"
+  pullPolicy: IfNotPresent
+nginx:
+  image: nginx:alpine
+
+transcode:
+  image: python:3.12-alpine
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 128Mi
+
+replicaCount: 1
+
+workloads:
+  aimomnivoice:
+    replicaCount: 1
+
+revisionHistoryLimit: 1
+apiPort: 8880
+dashboardPort: 8080
+transcodePort: 8010
+strategy:
+  type: Recreate
+resources:
+  limits:
+    cpu: "8"
+    memory: 16Gi
+    nvidia.com/gpu: "1"
+  requests:
+    cpu: "2"
+    memory: 6Gi
+nginxResources:
+  limits:
+    cpu: 200m
+    memory: 64Mi
+  requests:
+    cpu: 50m
+    memory: 32Mi
+
+env:
+  MODEL_ID: k2-fsa/OmniVoice
+  DEVICE: cuda:0
+  HF_HOME: /app/models
+  CUDA_DEVICE_MEMORY_LIMIT_0: "12000m"
+
+# Olares-injected environment variables (from OlaresManifest envs:).
+# Default present so standalone `helm template` renders without nil pointer;
+# Olares overrides this at install time.
+olaresEnv:
+  HF_TOKEN: ""
+
+volumes:
+  dshm:
+    sizeLimit: 2Gi
+
+startupProbe:
+  httpGet:
+    path: /health
+    port: 8880
+  failureThreshold: 40
+  periodSeconds: 15
+  timeoutSeconds: 5
+livenessProbe:
+  httpGet:
+    path: /health
+    port: 8880
+  initialDelaySeconds: 120
+  periodSeconds: 30
+  timeoutSeconds: 15
+  failureThreshold: 5
+
+userspace:
+  appData: /olares/rootfs/userspace/pvc-userspace-aimighty-phbiddku99qy4cuz
+
+service:
+  type: ClusterIP
