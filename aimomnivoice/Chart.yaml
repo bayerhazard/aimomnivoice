@@ -2,8 +2,8 @@ apiVersion: v2
 name: aimomnivoice
 description: AIM OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
 type: application
-version: 26.08.6
-appVersion: "26.08.6"
+version: 26.08.7
+appVersion: "26.08.7"
 keywords:
   - ai
   - tts

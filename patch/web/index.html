@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AIM OmniVoice TTS — Dashboard</title>
+<title>AImighty OmniVoice TTS — Dashboard</title>
 <style>
 :root{
   --am-skalierung:1;
@@ -65,7 +65,7 @@ body{
   border-bottom:1px solid var(--flaeche-2);
 }
 .header h1{font-size:clamp(1.35rem,1.1rem + 1vw,1.6rem);font-weight:700;letter-spacing:-0.02em;color:var(--text-stark);line-height:1.15}
-.header h1::first-letter{color:var(--gold)}
+  .header h1 .ai{color:var(--gold)}
 .header .subtitle{font-size:0.82rem;color:var(--text-dim);margin-top:var(--am-raum-1)}
 .lang-toggle{display:inline-flex;gap:2px;background:var(--flaeche-1);border:1px solid var(--flaeche-2);border-radius:0.375rem;padding:2px;flex-shrink:0}
 .lang-toggle button{border:none;background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:0.68rem;font-weight:600;letter-spacing:0.1em;padding:var(--am-raum-1) var(--am-raum-2);border-radius:0.25rem;cursor:pointer;transition:color 120ms var(--kurve),background-color 120ms var(--kurve)}
@@ -175,7 +175,7 @@ input[type=file]::file-selector-button:hover{border-color:var(--rand-marke)}
 
   <header class="header">
     <div>
-      <h1>AIM OmniVoice TTS</h1>
+      <h1><span class="ai">AI</span>mighty OmniVoice TTS</h1>
       <div class="subtitle" data-i18n="subtitle">OmniVoice 0.6B — 600+ Sprachen, Voice Design &amp; Cloning, 24 kHz</div>
     </div>
     <div class="lang-toggle" role="group" aria-label="Sprache">
@@ -280,7 +280,7 @@ const I18N = {
   de: {
     subtitle: 'OmniVoice 0.6B — 600+ Sprachen, Voice Design & Cloning, 24 kHz',
     kicker: 'Sprachsynthese',
-    textTitle: 'Text', ttsPlaceholder: 'Text zum Sprechen eingeben…',
+    textTitle: 'Was soll ich sagen?', ttsPlaceholder: 'Text zum Sprechen eingeben…',
     voiceTitle: 'Stimme', voiceLbl: 'Stimme (Preset)',
     instructLbl: 'Beschreibung', instructPh: 'Freie Beschreibung, z. B. "weiblich, ruhig"',
     ttsHint: 'Freie Beschreibung überschreibt die Preset-Auswahl.',
@@ -307,7 +307,7 @@ const I18N = {
   en: {
     subtitle: 'OmniVoice 0.6B — 600+ languages, voice design & cloning, 24 kHz',
     kicker: 'Speech Synthesis',
-    textTitle: 'Text', ttsPlaceholder: 'Enter text to synthesize…',
+    textTitle: 'What should I say?', ttsPlaceholder: 'Enter text to synthesize…',
     voiceTitle: 'Voice', voiceLbl: 'Voice (preset)',
     instructLbl: 'Description', instructPh: 'Free-form description, e.g. "female, calm"',
     ttsHint: 'A free-form description overrides the preset selection.',
