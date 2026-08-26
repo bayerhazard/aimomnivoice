@@ -122,13 +122,6 @@ data:
     }
     :focus-visible{outline:2px solid var(--fokus);outline-offset:2px;border-radius:0.25rem}
     .container{width:min(100% - var(--am-raum-8), 60rem);margin-inline:auto;padding-block:var(--am-raum-6)}
-    .kicker{
-      display:inline-flex;align-items:center;gap:var(--am-raum-2);
-      font-family:var(--mono);font-size:0.68rem;font-weight:600;
-      letter-spacing:0.18em;text-transform:uppercase;
-      color:var(--gold);margin-bottom:var(--am-raum-4);
-    }
-    .kicker::before{content:"";inline-size:1.4rem;block-size:1px;background:var(--rand-marke);display:block}
     .header{
       display:flex;align-items:center;justify-content:space-between;gap:var(--am-raum-4);
       margin-bottom:var(--am-raum-6);padding-block:var(--am-raum-1) var(--am-raum-4);
@@ -204,9 +197,7 @@ data:
     .rec-info{display:block;margin-top:var(--am-raum-1);font-size:0.72rem;color:var(--text-dim);font-family:var(--mono)}
     .rec-timer{font-family:var(--mono);font-size:0.78rem;color:var(--gold);min-inline-size:3.5rem;text-align:center}
     .controls{display:flex;gap:var(--am-raum-3);margin-top:var(--am-raum-3);align-items:center;flex-wrap:wrap}
-    .save-row{display:flex;gap:var(--am-raum-2);margin-top:var(--am-raum-3)}
-    .save-row input[type=text]{flex:1;min-height:2.5rem}
-    .save-row .btn{flex-shrink:0}
+    .controls .btn.primary{flex:1;min-inline-size:0}
     .hint{color:var(--text-dim);font-size:0.78rem;margin-top:var(--am-raum-2)}
     .action-row{display:flex;gap:var(--am-raum-3);margin-bottom:var(--am-raum-4);flex-wrap:wrap}
     .action-row .btn.primary{flex:1;min-inline-size:16rem}
@@ -290,37 +281,14 @@ data:
         </div>
       </header>
 
-      <span class="kicker" data-i18n="kicker">Sprachsynthese</span>
-
       <!-- 1 · Text (separat oben) -->
       <section class="card" aria-labelledby="textTitle">
         <div class="card-title" id="textTitle"><span class="icon">●</span><span data-i18n="textTitle">Text</span></div>
         <textarea id="textInput" data-i18n-ph="ttsPlaceholder">Hallo, das ist ein Test der OmniVoice-Sprachsynthese.</textarea>
       </section>
 
-      <!-- 2+3 · Stimme (links) / Voice Cloning (rechts) -->
+      <!-- 2+3 · Voice Cloning (links) / Stimme (rechts) -->
       <div class="row">
-        <section class="card" aria-labelledby="voiceTitle">
-          <div class="card-title" id="voiceTitle"><span class="icon">◍</span><span data-i18n="voiceTitle">Stimme</span></div>
-          <label class="fld" for="voiceSelect" data-i18n="voiceLbl">Stimme (Preset)</label>
-          <select id="voiceSelect" aria-label="Stimme">
-            <option value="auto">Auto</option>
-            <option value="female" selected>Weiblich</option>
-            <option value="male">Männlich</option>
-            <option value="child">Kind</option>
-            <option value="elderly">Ältere Stimme</option>
-            <option value="whisper">Flüstern</option>
-            <option value="female_en">Weiblich (US)</option>
-            <option value="male_en">Männlich (US)</option>
-            <option value="female_br">Weiblich (UK)</option>
-            <option value="male_br">Männlich (UK)</option>
-            <optgroup id="cloneGroup" hidden></optgroup>
-          </select>
-          <label class="fld" for="instructInput" data-i18n="instructLbl">Beschreibung</label>
-          <input type="text" id="instructInput" data-i18n-ph="instructPh" placeholder="">
-          <div class="hint" data-i18n="ttsHint">Freie Beschreibung überschreibt die Preset-Auswahl.</div>
-        </section>
-
         <section class="card" aria-labelledby="cloneTitle">
           <div class="card-title" id="cloneTitle"><span class="icon">◈</span><span data-i18n="cloneTitle">Voice Cloning</span></div>
           <label class="fld" for="refAudio" data-i18n="refAudioLbl">Referenz-Audio (3–10 s, WAV/MP3/M4A)</label>
@@ -341,14 +309,33 @@ data:
           </div>
           <label class="fld" for="refText" data-i18n="refTextLbl">Referenz-Transkript (exakter Text)</label>
           <input type="text" id="refText" data-i18n-ph="refTextPh" placeholder="">
-          <div class="save-row">
-            <input type="text" id="cloneName" data-i18n-ph="cloneNamePh" placeholder="Klon-Name, z. B. justus">
-            <button type="button" class="btn quiet" id="saveCloneBtn" data-i18n="saveCloneBtn">Als Klon speichern</button>
-          </div>
+          <label class="fld" for="cloneName" data-i18n="cloneNameLbl">Klon-Name</label>
+          <input type="text" id="cloneName" data-i18n-ph="cloneNamePh" placeholder="Klon-Name, z. B. justus">
           <div class="controls">
-            <button type="button" class="btn secondary" id="cloneBtn" data-i18n="cloneBtn">Klonen &amp; sprechen</button>
+            <button type="button" class="btn primary" id="saveCloneBtn" data-i18n="saveCloneBtn">Klonen &amp; speichern</button>
           </div>
           <div class="hint" data-i18n="cloneHint">Nur Stimmen klonen, für die du Rechte und Einverständnis hast.</div>
+        </section>
+
+        <section class="card" aria-labelledby="voiceTitle">
+          <div class="card-title" id="voiceTitle"><span class="icon">◍</span><span data-i18n="voiceTitle">Stimme</span></div>
+          <label class="fld" for="voiceSelect" data-i18n="voiceLbl">Stimme (Preset)</label>
+          <select id="voiceSelect" aria-label="Stimme">
+            <option value="auto">Auto</option>
+            <option value="female" selected>Weiblich</option>
+            <option value="male">Männlich</option>
+            <option value="child">Kind</option>
+            <option value="elderly">Ältere Stimme</option>
+            <option value="whisper">Flüstern</option>
+            <option value="female_en">Weiblich (US)</option>
+            <option value="male_en">Männlich (US)</option>
+            <option value="female_br">Weiblich (UK)</option>
+            <option value="male_br">Männlich (UK)</option>
+            <optgroup id="cloneGroup" hidden></optgroup>
+          </select>
+          <label class="fld" for="instructInput" data-i18n="instructLbl">Beschreibung</label>
+          <input type="text" id="instructInput" data-i18n-ph="instructPh" placeholder="">
+          <div class="hint" data-i18n="ttsHint">Freie Beschreibung überschreibt die Preset-Auswahl.</div>
         </section>
       </div>
 
@@ -385,7 +372,6 @@ data:
     const I18N = {
       de: {
         subtitle: 'OmniVoice 0.6B — 600+ Sprachen, Voice Design & Cloning, 24 kHz',
-        kicker: 'Sprachsynthese',
         textTitle: 'Was soll ich sagen?', ttsPlaceholder: 'Text zum Sprechen eingeben…',
         voiceTitle: 'Stimme', voiceLbl: 'Stimme (Preset)',
         instructLbl: 'Beschreibung', instructPh: 'Freie Beschreibung, z. B. "weiblich, ruhig"',
@@ -396,12 +382,11 @@ data:
         recording: 'Aufnahme', recLabel: 'Aufnahme · {t} · WAV',
         refTextLbl: 'Referenz-Transkript (exakter Text)',
         refTextPh: 'Was im Referenz-Audio gesagt wird …',
-        cloneNamePh: 'Klon-Name, z. B. justus',
-        saveCloneBtn: 'Als Klon speichern', saveBtnBusy: 'Speichern…', cloneSaved: 'Klon gespeichert.',
-        cloneBtn: 'Klonen & sprechen',
+        cloneNameLbl: 'Klon-Name', cloneNamePh: 'Klon-Name, z. B. justus',
+        saveCloneBtn: 'Klonen & speichern', saveBtnBusy: 'Klonen läuft…', cloneSaved: 'Klon gespeichert.',
         cloneHint: 'Nur Stimmen klonen, für die du Rechte und Einverständnis hast.',
         svcTitle: 'Services', svcEngine: 'Engine', svcApi: 'API', svcLang: 'Sprachen', svcFmt: 'Format',
-        genBtn: 'Sprachausgabe generieren', genBtnBusy: 'Sprachausgabe wird erzeugt…', cloneBtnBusy: 'Cloning läuft…',
+        genBtn: 'Sprachausgabe generieren', genBtnBusy: 'Sprachausgabe wird erzeugt…',
         healthChecking: 'Status wird geprüft…', healthOk: 'Bereit', healthBad: 'Nicht erreichbar',
         cfgModel: 'Modell', errNoText: 'Bitte zuerst Text eingeben.',
         errNoRef: 'Bitte Referenz-Audio auswählen oder aufnehmen.',
@@ -412,7 +397,6 @@ data:
       },
       en: {
         subtitle: 'OmniVoice 0.6B — 600+ languages, voice design & cloning, 24 kHz',
-        kicker: 'Speech Synthesis',
         textTitle: 'What should I say?', ttsPlaceholder: 'Enter text to synthesize…',
         voiceTitle: 'Voice', voiceLbl: 'Voice (preset)',
         instructLbl: 'Description', instructPh: 'Free-form description, e.g. "female, calm"',
@@ -423,12 +407,11 @@ data:
         recording: 'Recording', recLabel: 'Recording · {t} · WAV',
         refTextLbl: 'Reference transcript (exact text)',
         refTextPh: 'What is spoken in the reference audio …',
-        cloneNamePh: 'Clone name, e.g. justus',
-        saveCloneBtn: 'Save as clone', saveBtnBusy: 'Saving…', cloneSaved: 'Clone saved.',
-        cloneBtn: 'Clone & speak',
+        cloneNameLbl: 'Clone name', cloneNamePh: 'Clone name, e.g. justus',
+        saveCloneBtn: 'Clone & save', saveBtnBusy: 'Cloning…', cloneSaved: 'Clone saved.',
         cloneHint: 'Only clone voices you have the rights and consent to.',
         svcTitle: 'Services', svcEngine: 'Engine', svcApi: 'API', svcLang: 'Languages', svcFmt: 'Format',
-        genBtn: 'Generate speech', genBtnBusy: 'Generating speech…', cloneBtnBusy: 'Cloning…',
+        genBtn: 'Generate speech', genBtnBusy: 'Generating speech…',
         healthChecking: 'Checking status…', healthOk: 'Ready', healthBad: 'Unreachable',
         cfgModel: 'Model', errNoText: 'Please enter some text first.',
         errNoRef: 'Please select or record a reference audio.',
@@ -626,29 +609,6 @@ data:
       finally { btn.disabled = false; btn.textContent = I18N[LANG].genBtn; }
     }
 
-    async function cloneVoice() {
-      const text = document.getElementById('textInput').value.trim();
-      const src = getRefSource();
-      const refText = document.getElementById('refText').value.trim();
-      if (!text) { setStatus('error', I18N[LANG].errNoText); return; }
-      if (!src) { setStatus('error', I18N[LANG].errNoRef); return; }
-      const btn = document.getElementById('cloneBtn');
-      btn.disabled = true; btn.textContent = I18N[LANG].cloneBtnBusy;
-      audioWrap.classList.remove('show'); setLoading(I18N[LANG].generating);
-      try {
-        const fd = new FormData();
-        fd.append('text', text);
-        fd.append('ref_audio', src.blob, src.name);
-        if (refText) fd.append('ref_text', refText);
-        const res = await fetch('/v1/audio/clone', { method: 'POST', body: fd });
-        if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || e.message || ('HTTP ' + res.status)); }
-        const blob = await res.blob();
-        if (blob.size === 0) { setStatus('error', I18N[LANG].emptyAudio); return; }
-        showAudio(blob); setStatus('success', I18N[LANG].done);
-      } catch (e) { setStatus('error', 'Error: ' + e.message); }
-      finally { btn.disabled = false; btn.textContent = I18N[LANG].cloneBtn; }
-    }
-
     async function saveClone() {
       const name = document.getElementById('cloneName').value.trim();
       const src = getRefSource();
@@ -671,7 +631,6 @@ data:
     }
 
     document.getElementById('generateBtn').addEventListener('click', generateSpeech);
-    document.getElementById('cloneBtn').addEventListener('click', cloneVoice);
     document.getElementById('saveCloneBtn').addEventListener('click', saveClone);
     micBtn.addEventListener('click', toggleMic);
     document.getElementById('refAudio').addEventListener('change', () => {
