@@ -12,7 +12,7 @@ metadata:
   icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
   description: OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
   title: AIM OmniVoice 0.6B TTS
-  version: '26.08.2'
+  version: '26.08.5'
   categories:
     - Audio
 
@@ -26,9 +26,9 @@ entrances:
     authLevel: internal
 
 spec:
-  versionName: '26.08.2'
+  versionName: '26.08.5'
   upgradeDescription: |
-    v26.08.2: Initial release — OmniVoice 0.6B zero-shot TTS via native omnivoice runtime (FastAPI wrapper, digest-pinned diogod2r/omnivoice-fastapi). Endpoints: /v1/audio/speech (OpenAI-compatible, presets + free-form instruct), /v1/audio/design, /v1/audio/clone, /v1/models, /v1/voices. WAV->MP3 transcode sidecar for LiteLLM/Open WebUI compatibility. ~4 GB VRAM on worker GPU (MemorySlice co-residency). Built for Olares 1.12.6.
+    v26.08.5: Voice-Clone-Registry supports WAV/MP3/M4A reference audio (extension-preserving) — plus v26.08.4: Voice-Clone-Registry (POST/GET/DELETE /v1/audio/clones) + v26.08.3: Named voice clones (voice: "clone:<name>", Referenz-Audio aus voices/) — basiert auf 26.08.2: OmniVoice 0.6B zero-shot TTS via native omnivoice runtime (FastAPI wrapper, digest-pinned diogod2r/omnivoice-fastapi). Endpoints: /v1/audio/speech (OpenAI-compatible, presets + free-form instruct), /v1/audio/design, /v1/audio/clone, /v1/models, /v1/voices. WAV->MP3 transcode sidecar for LiteLLM/Open WebUI compatibility. ~4 GB VRAM on worker GPU (MemorySlice co-residency). Built for Olares 1.12.6.
   fullDescription: |
     **OmniVoice-0.6B** — k2-fsa's massively multilingual zero-shot TTS (600+ languages) based on a Qwen3-0.6B diffusion language model.
 

@@ -513,6 +513,9 @@ spec:
             mountPath: /app/models
           - name: dshm
             mountPath: /dev/shm
+          - name: main-patch
+            mountPath: /app/main.py
+            subPath: main.py
         startupProbe:
             {{- toYaml .Values.startupProbe | nindent 10 }}
         livenessProbe:
@@ -577,6 +580,12 @@ spec:
             items:
               - key: tts-transcode.py
                 path: tts-transcode.py
+        - name: main-patch
+          configMap:
+            name: aimomnivoice-code
+            items:
+              - key: main.py
+                path: main.py
 ---
 apiVersion: v1
 kind: Service
