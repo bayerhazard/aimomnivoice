@@ -253,6 +253,11 @@ async def register_clone(
     if ext not in _AUDIO_EXTS:
         ext = ".wav"
     raw, ext = _normalize_ref(raw, ext)
+    # Re-registration replaces any existing audio for this name (all extensions)
+    for old_ext in _AUDIO_EXTS:
+        old = os.path.join(VOICES_DIR, n + old_ext)
+        if os.path.isfile(old):
+            os.remove(old)
     wav_path = os.path.join(VOICES_DIR, n + ext)
     with open(wav_path, "wb") as f:
         f.write(raw)
@@ -265,13 +270,18 @@ async def register_clone(
 @app.delete("/v1/audio/clones/{name}", tags=["Voice Clones"])
 async def delete_clone(name: str):
     n = _safe_name(name)
-    wav = _clone_audio(n)
-    if wav is None:
-        raise HTTPException(404, f"Voice clone '{n}' not found")
-    os.remove(wav)
+    removed = False
+    for ext in _AUDIO_EXTS:
+        p = os.path.join(VOICES_DIR, n + ext)
+        if os.path.isfile(p):
+            os.remove(p)
+            removed = True
     txt = os.path.join(VOICES_DIR, n + ".txt")
     if os.path.isfile(txt):
         os.remove(txt)
+        removed = True
+    if not removed:
+        raise HTTPException(404, f"Voice clone '{n}' not found")
     return {"success": True, "name": n}
 
 
