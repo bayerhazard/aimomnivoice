@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AIM OmniVoice TTS — Dashboard</title>
+<style>
+:root{
+  --am-skalierung:1;
+  --am-einheit:0.25rem;
+  --am-raum-1:calc(var(--am-einheit)*1*var(--am-skalierung));
+  --am-raum-2:calc(var(--am-einheit)*2*var(--am-skalierung));
+  --am-raum-3:calc(var(--am-einheit)*3*var(--am-skalierung));
+  --am-raum-4:calc(var(--am-einheit)*4*var(--am-skalierung));
+  --am-raum-6:calc(var(--am-einheit)*6*var(--am-skalierung));
+  --am-raum-8:calc(var(--am-einheit)*8*var(--am-skalierung));
+  --am-raum-12:calc(var(--am-einheit)*12*var(--am-skalierung));
+  --am-raum-16:calc(var(--am-einheit)*16*var(--am-skalierung));
+  --blau:#051729;
+  --flaeche-1:#0a2238;
+  --flaeche-2:#142e47;
+  --gold:#caa960;
+  --gold-hell:#d8bc75;
+  --handlung:#caa960;
+  --auf-handlung:#051729;
+  --text:#e8eef4;
+  --text-stark:#ffffff;
+  --text-dim:#8fa3b8;
+  --rand:var(--flaeche-2);
+  --rand-marke:color-mix(in oklab, var(--gold) 44%, transparent);
+  --marke-flaeche:color-mix(in oklab, var(--gold) 12%, transparent);
+  --erfolg:#55c483;
+  --fehler:#f6857a;
+  --fokus:var(--gold-hell);
+  --schrift:'Geist',system-ui,sans-serif;
+  --mono:'Geist Mono',ui-monospace,monospace;
+  --radius:0.5rem;
+  --kurve:cubic-bezier(0.2,0,0,1);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{
+  font-family:var(--schrift);
+  font-size:0.9375rem;
+  line-height:1.5;
+  background:var(--blau);
+  color:var(--text);
+  min-height:100vh;
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}
+:focus-visible{outline:2px solid var(--fokus);outline-offset:2px;border-radius:0.25rem}
+.container{width:min(100% - var(--am-raum-8), 60rem);margin-inline:auto;padding-block:var(--am-raum-6)}
+.kicker{
+  display:inline-flex;align-items:center;gap:var(--am-raum-2);
+  font-family:var(--mono);font-size:0.68rem;font-weight:600;
+  letter-spacing:0.18em;text-transform:uppercase;
+  color:var(--gold);margin-bottom:var(--am-raum-4);
+}
+.kicker::before{content:"";inline-size:1.4rem;block-size:1px;background:var(--rand-marke);display:block}
+.header{
+  display:flex;align-items:center;justify-content:space-between;gap:var(--am-raum-4);
+  margin-bottom:var(--am-raum-6);padding-block:var(--am-raum-1) var(--am-raum-4);
+  border-bottom:1px solid var(--flaeche-2);
+}
+.header h1{font-size:clamp(1.35rem,1.1rem + 1vw,1.6rem);font-weight:700;letter-spacing:-0.02em;color:var(--text-stark);line-height:1.15}
+.header h1::first-letter{color:var(--gold)}
+.header .subtitle{font-size:0.82rem;color:var(--text-dim);margin-top:var(--am-raum-1)}
+.lang-toggle{display:inline-flex;gap:2px;background:var(--flaeche-1);border:1px solid var(--flaeche-2);border-radius:0.375rem;padding:2px;flex-shrink:0}
+.lang-toggle button{border:none;background:transparent;color:var(--text-dim);font-family:var(--mono);font-size:0.68rem;font-weight:600;letter-spacing:0.1em;padding:var(--am-raum-1) var(--am-raum-2);border-radius:0.25rem;cursor:pointer;transition:color 120ms var(--kurve),background-color 120ms var(--kurve)}
+.lang-toggle button:hover{color:var(--text-stark)}
+.lang-toggle button.active{background:var(--gold);color:var(--auf-handlung)}
+.card{background:var(--flaeche-1);border:1px solid var(--flaeche-2);border-radius:var(--radius);padding:var(--am-raum-4) var(--am-raum-4) var(--am-raum-4);margin-bottom:var(--am-raum-4)}
+.card-title{font-size:0.95rem;font-weight:600;color:var(--text-stark);margin-bottom:var(--am-raum-3);display:flex;align-items:center;gap:var(--am-raum-2)}
+.card-title .icon{color:var(--gold)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:var(--am-raum-4);margin-bottom:var(--am-raum-4)}
+.row .card{margin-bottom:0}
+textarea,input[type=text]{
+  width:100%;min-height:var(--am-raum-16);padding:var(--am-raum-3) var(--am-raum-3);border-radius:0.375rem;
+  border:1px solid var(--flaeche-2);background:var(--flaeche-2);color:var(--text);
+  font-family:var(--schrift);font-size:0.95rem;line-height:1.5;resize:vertical;outline:none;
+  transition:border-color 120ms var(--kurve);
+}
+input[type=text]{min-height:2.5rem;resize:none}
+textarea:focus,input[type=text]:focus{border-color:var(--rand-marke)}
+textarea::placeholder,input::placeholder{color:var(--text-dim)}
+select{
+  width:100%;padding:var(--am-raum-2) var(--am-raum-3);border-radius:0.375rem;
+  border:1px solid var(--flaeche-2);background:var(--flaeche-2);color:var(--text);
+  font-size:0.9rem;outline:none;cursor:pointer;font-family:var(--schrift);
+  transition:border-color 120ms var(--kurve);
+}
+select:focus{border-color:var(--rand-marke)}
+select option,select optgroup{background:var(--flaeche-1)}
+label.fld{display:block;font-size:0.72rem;font-family:var(--mono);letter-spacing:0.12em;text-transform:uppercase;color:var(--text-dim);margin:var(--am-raum-3) 0 var(--am-raum-1)}
+label.fld:first-of-type{margin-top:0}
+input[type=file]{font-family:var(--mono);font-size:0.78rem;color:var(--text-dim);width:100%}
+input[type=file]::file-selector-button{
+  border:1px solid var(--flaeche-2);border-radius:0.375rem;background:var(--flaeche-2);color:var(--text);
+  font-family:var(--mono);font-size:0.72rem;padding:var(--am-raum-1) var(--am-raum-3);cursor:pointer;margin-right:var(--am-raum-2);
+  transition:border-color 120ms var(--kurve);
+}
+input[type=file]::file-selector-button:hover{border-color:var(--rand-marke)}
+.ref-row{display:flex;align-items:center;gap:var(--am-raum-2)}
+.ref-row input[type=file]{flex:1}
+.btn{
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--am-raum-2);
+  block-size:2.5rem;padding-inline:var(--am-raum-4);
+  border:1px solid var(--flaeche-2);border-radius:0.375rem;
+  background:var(--flaeche-2);color:var(--text);
+  font-family:var(--schrift);font-size:0.85rem;font-weight:600;line-height:1;
+  white-space:nowrap;cursor:pointer;user-select:none;
+  transition:background-color 120ms var(--kurve),border-color 120ms var(--kurve),color 120ms var(--kurve);
+}
+.btn:hover{border-color:var(--rand-marke);background:var(--marke-flaeche);color:var(--text-stark)}
+.btn.primary{background:var(--handlung);border-color:var(--handlung);color:var(--auf-handlung)}
+.btn.primary:hover{background:var(--gold-hell);border-color:var(--gold-hell)}
+.btn.secondary{background:transparent}
+.btn.quiet{background:transparent;border-color:transparent;color:var(--text-dim)}
+.btn.quiet:hover{color:var(--text-stark);background:var(--marke-flaeche);border-color:var(--rand-marke)}
+.btn:disabled{opacity:0.5;cursor:not-allowed;pointer-events:none}
+.btn-icon{
+  display:inline-flex;align-items:center;justify-content:center;
+  inline-size:2.5rem;block-size:2.5rem;flex-shrink:0;
+  border:1px solid var(--flaeche-2);border-radius:0.375rem;
+  background:transparent;color:var(--text-dim);cursor:pointer;
+  transition:background-color 120ms var(--kurve),border-color 120ms var(--kurve),color 120ms var(--kurve);
+}
+.btn-icon:hover{border-color:var(--rand-marke);background:var(--marke-flaeche);color:var(--text-stark)}
+.btn-icon.recording{border-color:var(--gold);color:var(--gold);background:var(--marke-flaeche)}
+.rec-wrap{margin-top:var(--am-raum-2);padding:var(--am-raum-2) var(--am-raum-3);border-radius:0.375rem;background:var(--blau);border:1px solid var(--flaeche-2)}
+.rec-wrap audio{width:100%;height:2.5rem}
+.rec-info{display:block;margin-top:var(--am-raum-1);font-size:0.72rem;color:var(--text-dim);font-family:var(--mono)}
+.rec-timer{font-family:var(--mono);font-size:0.78rem;color:var(--gold);min-inline-size:3.5rem;text-align:center}
+.controls{display:flex;gap:var(--am-raum-3);margin-top:var(--am-raum-3);align-items:center;flex-wrap:wrap}
+.save-row{display:flex;gap:var(--am-raum-2);margin-top:var(--am-raum-3)}
+.save-row input[type=text]{flex:1;min-height:2.5rem}
+.save-row .btn{flex-shrink:0}
+.hint{color:var(--text-dim);font-size:0.78rem;margin-top:var(--am-raum-2)}
+.action-row{display:flex;gap:var(--am-raum-3);margin-bottom:var(--am-raum-4);flex-wrap:wrap}
+.action-row .btn.primary{flex:1;min-inline-size:16rem}
+.audio-wrap{margin-bottom:var(--am-raum-4);padding:var(--am-raum-3) var(--am-raum-4);border-radius:var(--radius);background:var(--flaeche-1);border:1px solid var(--flaeche-2);display:none}
+.audio-wrap.show{display:block}
+.audio-wrap audio{width:100%;height:2.5rem}
+.audio-wrap .size{margin-top:var(--am-raum-1);font-size:0.72rem;color:var(--text-dim);font-family:var(--mono)}
+.status{margin-bottom:var(--am-raum-4);font-size:0.85rem;color:var(--text-dim);min-height:1.5rem;display:flex;align-items:center;gap:var(--am-raum-2)}
+.status.error{color:var(--fehler)}
+.status.success{color:var(--erfolg)}
+.spinner{display:inline-block;width:0.875rem;height:0.875rem;border:2px solid var(--flaeche-2);border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(10rem,1fr));gap:var(--am-raum-3)}
+.info-item{background:var(--blau);border:1px solid var(--flaeche-2);border-radius:0.375rem;padding:var(--am-raum-3)}
+.info-item .k{font-size:0.64rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.14em;font-family:var(--mono);font-weight:600;margin-bottom:var(--am-raum-1)}
+.info-item .v{font-size:0.85rem;color:var(--text-stark);font-weight:500}
+.foot{margin-top:var(--am-raum-6);padding-top:var(--am-raum-4);border-top:1px solid var(--flaeche-2);display:flex;justify-content:space-between;gap:var(--am-raum-4);flex-wrap:wrap;font-size:0.74rem;color:var(--text-dim);font-family:var(--mono)}
+.foot .health{display:inline-flex;align-items:center;gap:var(--am-raum-1)}
+.foot .health .ok{color:var(--erfolg)}
+.foot .health .bad{color:var(--fehler)}
+@media (max-width:640px){
+  .header{flex-direction:column;gap:var(--am-raum-3);align-items:flex-start}
+  .row{grid-template-columns:1fr}
+  .action-row .btn.primary{min-inline-size:0}
+}
+::-webkit-scrollbar{width:8px;height:8px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--flaeche-2);border-radius:4px}
+::-webkit-scrollbar-thumb:hover{background:var(--text-dim)}
+@media (prefers-reduced-motion:reduce){*{animation:none !important;transition:none !important}}
+</style>
+/*__FONTS__*/
+</head>
+<body>
+<div class="container">
+
+  <header class="header">
+    <div>
+      <h1>AIM OmniVoice TTS</h1>
+      <div class="subtitle" data-i18n="subtitle">OmniVoice 0.6B — 600+ Sprachen, Voice Design &amp; Cloning, 24 kHz</div>
+    </div>
+    <div class="lang-toggle" role="group" aria-label="Sprache">
+      <button type="button" id="langDE" class="active">DE</button>
+      <button type="button" id="langEN">EN</button>
+    </div>
+  </header>
+
+  <span class="kicker" data-i18n="kicker">Sprachsynthese</span>
+
+  <!-- 1 · Text (separat oben) -->
+  <section class="card" aria-labelledby="textTitle">
+    <div class="card-title" id="textTitle"><span class="icon">●</span><span data-i18n="textTitle">Text</span></div>
+    <textarea id="textInput" data-i18n-ph="ttsPlaceholder">Hallo, das ist ein Test der OmniVoice-Sprachsynthese.</textarea>
+  </section>
+
+  <!-- 2+3 · Stimme (links) / Voice Cloning (rechts) -->
+  <div class="row">
+    <section class="card" aria-labelledby="voiceTitle">
+      <div class="card-title" id="voiceTitle"><span class="icon">◍</span><span data-i18n="voiceTitle">Stimme</span></div>
+      <label class="fld" for="voiceSelect" data-i18n="voiceLbl">Stimme (Preset)</label>
+      <select id="voiceSelect" aria-label="Stimme">
+        <option value="auto">Auto</option>
+        <option value="female" selected>Weiblich</option>
+        <option value="male">Männlich</option>
+        <option value="child">Kind</option>
+        <option value="elderly">Ältere Stimme</option>
+        <option value="whisper">Flüstern</option>
+        <option value="female_en">Weiblich (US)</option>
+        <option value="male_en">Männlich (US)</option>
+        <option value="female_br">Weiblich (UK)</option>
+        <option value="male_br">Männlich (UK)</option>
+        <optgroup id="cloneGroup" hidden></optgroup>
+      </select>
+      <label class="fld" for="instructInput" data-i18n="instructLbl">Beschreibung</label>
+      <input type="text" id="instructInput" data-i18n-ph="instructPh" placeholder="">
+      <div class="hint" data-i18n="ttsHint">Freie Beschreibung überschreibt die Preset-Auswahl.</div>
+    </section>
+
+    <section class="card" aria-labelledby="cloneTitle">
+      <div class="card-title" id="cloneTitle"><span class="icon">◈</span><span data-i18n="cloneTitle">Voice Cloning</span></div>
+      <label class="fld" for="refAudio" data-i18n="refAudioLbl">Referenz-Audio (3–10 s, WAV/MP3/M4A)</label>
+      <div class="ref-row">
+        <input type="file" id="refAudio" accept="audio/*">
+        <button type="button" class="btn-icon" id="micBtn" data-i18n-title="micBtnTitle" title="Per Mikrofon aufnehmen" aria-label="Per Mikrofon aufnehmen">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+            <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+            <line x1="12" x2="12" y1="19" y2="22"/>
+          </svg>
+        </button>
+        <span class="rec-timer" id="recTimer" hidden></span>
+      </div>
+      <div class="rec-wrap" id="recWrap" hidden>
+        <audio id="recPlayer" controls></audio>
+        <span class="rec-info" id="recInfo"></span>
+      </div>
+      <label class="fld" for="refText" data-i18n="refTextLbl">Referenz-Transkript (exakter Text)</label>
+      <input type="text" id="refText" data-i18n-ph="refTextPh" placeholder="">
+      <div class="save-row">
+        <input type="text" id="cloneName" data-i18n-ph="cloneNamePh" placeholder="Klon-Name, z. B. justus">
+        <button type="button" class="btn quiet" id="saveCloneBtn" data-i18n="saveCloneBtn">Als Klon speichern</button>
+      </div>
+      <div class="controls">
+        <button type="button" class="btn secondary" id="cloneBtn" data-i18n="cloneBtn">Klonen &amp; sprechen</button>
+      </div>
+      <div class="hint" data-i18n="cloneHint">Nur Stimmen klonen, für die du Rechte und Einverständnis hast.</div>
+    </section>
+  </div>
+
+  <!-- 4 · Primäre Handlung -->
+  <div class="action-row">
+    <button type="button" class="btn primary" id="generateBtn" data-i18n="genBtn">Sprachausgabe generieren</button>
+  </div>
+
+  <div class="status" id="status" role="status" aria-live="polite"></div>
+  <div class="audio-wrap" id="audioWrap">
+    <audio id="player" controls></audio>
+    <div class="size" id="audioSize"></div>
+  </div>
+
+  <!-- 5 · Services (ganz unten) -->
+  <section class="card" aria-labelledby="svcTitle">
+    <div class="card-title" id="svcTitle"><span class="icon">▤</span><span data-i18n="svcTitle">Services</span></div>
+    <div class="info-grid">
+      <div class="info-item"><div class="k" data-i18n="svcEngine">Engine</div><div class="v">omnivoice (native)</div></div>
+      <div class="info-item"><div class="k" data-i18n="svcApi">API</div><div class="v">/v1/audio/speech · /clone · /clones</div></div>
+      <div class="info-item"><div class="k" data-i18n="svcLang">Sprachen</div><div class="v">600+</div></div>
+      <div class="info-item"><div class="k" data-i18n="svcFmt">Format</div><div class="v">24 kHz</div></div>
+    </div>
+  </section>
+
+  <footer class="foot">
+    <div class="health" id="healthInfo"><span data-i18n="healthChecking">Status wird geprüft…</span></div>
+    <div class="cfg">
+      <span><b data-i18n="cfgModel">Modell</b>: k2-fsa/OmniVoice</span>
+    </div>
+  </footer>
+</div>
+<script>
+const I18N = {
+  de: {
+    subtitle: 'OmniVoice 0.6B — 600+ Sprachen, Voice Design & Cloning, 24 kHz',
+    kicker: 'Sprachsynthese',
+    textTitle: 'Text', ttsPlaceholder: 'Text zum Sprechen eingeben…',
+    voiceTitle: 'Stimme', voiceLbl: 'Stimme (Preset)',
+    instructLbl: 'Beschreibung', instructPh: 'Freie Beschreibung, z. B. "weiblich, ruhig"',
+    ttsHint: 'Freie Beschreibung überschreibt die Preset-Auswahl.',
+    cloneTitle: 'Voice Cloning',
+    refAudioLbl: 'Referenz-Audio (3–10 s, WAV/MP3/M4A)',
+    micBtnTitle: 'Per Mikrofon aufnehmen', micStopTitle: 'Aufnahme stoppen',
+    recording: 'Aufnahme', recLabel: 'Aufnahme · {t} · WAV',
+    refTextLbl: 'Referenz-Transkript (exakter Text)',
+    refTextPh: 'Was im Referenz-Audio gesagt wird …',
+    cloneNamePh: 'Klon-Name, z. B. justus',
+    saveCloneBtn: 'Als Klon speichern', saveBtnBusy: 'Speichern…', cloneSaved: 'Klon gespeichert.',
+    cloneBtn: 'Klonen & sprechen',
+    cloneHint: 'Nur Stimmen klonen, für die du Rechte und Einverständnis hast.',
+    svcTitle: 'Services', svcEngine: 'Engine', svcApi: 'API', svcLang: 'Sprachen', svcFmt: 'Format',
+    genBtn: 'Sprachausgabe generieren', genBtnBusy: 'Sprachausgabe wird erzeugt…', cloneBtnBusy: 'Cloning läuft…',
+    healthChecking: 'Status wird geprüft…', healthOk: 'Bereit', healthBad: 'Nicht erreichbar',
+    cfgModel: 'Modell', errNoText: 'Bitte zuerst Text eingeben.',
+    errNoRef: 'Bitte Referenz-Audio auswählen oder aufnehmen.',
+    errNoCloneName: 'Bitte Klon-Name eingeben.',
+    micError: 'Mikrofon nicht verfügbar', micDecodeErr: 'Aufnahme konnte nicht verarbeitet werden.',
+    clonePrefix: 'Klon', generating: 'Audio wird erzeugt…',
+    done: 'Fertig', size: 'Größe', emptyAudio: '(leeres Audio)',
+  },
+  en: {
+    subtitle: 'OmniVoice 0.6B — 600+ languages, voice design & cloning, 24 kHz',
+    kicker: 'Speech Synthesis',
+    textTitle: 'Text', ttsPlaceholder: 'Enter text to synthesize…',
+    voiceTitle: 'Voice', voiceLbl: 'Voice (preset)',
+    instructLbl: 'Description', instructPh: 'Free-form description, e.g. "female, calm"',
+    ttsHint: 'A free-form description overrides the preset selection.',
+    cloneTitle: 'Voice Cloning',
+    refAudioLbl: 'Reference audio (3–10 s, WAV/MP3/M4A)',
+    micBtnTitle: 'Record from microphone', micStopTitle: 'Stop recording',
+    recording: 'Recording', recLabel: 'Recording · {t} · WAV',
+    refTextLbl: 'Reference transcript (exact text)',
+    refTextPh: 'What is spoken in the reference audio …',
+    cloneNamePh: 'Clone name, e.g. justus',
+    saveCloneBtn: 'Save as clone', saveBtnBusy: 'Saving…', cloneSaved: 'Clone saved.',
+    cloneBtn: 'Clone & speak',
+    cloneHint: 'Only clone voices you have the rights and consent to.',
+    svcTitle: 'Services', svcEngine: 'Engine', svcApi: 'API', svcLang: 'Languages', svcFmt: 'Format',
+    genBtn: 'Generate speech', genBtnBusy: 'Generating speech…', cloneBtnBusy: 'Cloning…',
+    healthChecking: 'Checking status…', healthOk: 'Ready', healthBad: 'Unreachable',
+    cfgModel: 'Model', errNoText: 'Please enter some text first.',
+    errNoRef: 'Please select or record a reference audio.',
+    errNoCloneName: 'Please enter a clone name.',
+    micError: 'Microphone unavailable', micDecodeErr: 'Could not process the recording.',
+    clonePrefix: 'Clone', generating: 'Generating audio…',
+    done: 'Done', size: 'Size', emptyAudio: '(empty audio)',
+  }
+};
+let LANG = 'de';
+function applyLang() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const k = el.getAttribute('data-i18n'); if (I18N[LANG][k]) el.textContent = I18N[LANG][k];
+  });
+  document.querySelectorAll('[data-i18n-ph]').forEach(el => {
+    const k = el.getAttribute('data-i18n-ph'); if (I18N[LANG][k]) el.placeholder = I18N[LANG][k];
+  });
+  document.querySelectorAll('[data-i18n-title]').forEach(el => {
+    const k = el.getAttribute('data-i18n-title'); if (I18N[LANG][k]) el.title = I18N[LANG][k];
+  });
+  document.getElementById('langDE').classList.toggle('active', LANG === 'de');
+  document.getElementById('langEN').classList.toggle('active', LANG === 'en');
+  document.documentElement.lang = LANG;
+  const group = document.getElementById('cloneGroup');
+  if (group && !group.hidden) group.label = I18N[LANG].clonePrefix;
+}
+document.getElementById('langDE').addEventListener('click', () => { LANG = 'de'; applyLang(); });
+document.getElementById('langEN').addEventListener('click', () => { LANG = 'en'; applyLang(); });
+
+const statusEl = document.getElementById('status');
+const audioWrap = document.getElementById('audioWrap');
+const player = document.getElementById('player');
+const audioSize = document.getElementById('audioSize');
+
+function setStatus(cls, msg) { statusEl.className = 'status' + (cls ? ' ' + cls : ''); statusEl.textContent = msg; }
+function setLoading(msg) { statusEl.className = 'status'; statusEl.innerHTML = '<span class="spinner"></span>' + msg; }
+function showAudio(blob) {
+  player.src = URL.createObjectURL(blob);
+  audioSize.textContent = I18N[LANG].size + ': ' + (blob.size / 1024).toFixed(0) + ' KB';
+  audioWrap.classList.add('show');
+  player.play().catch(() => {});
+}
+
+async function checkHealth() {
+  try {
+    await fetch('/health').then(r => r.json());
+    document.getElementById('healthInfo').innerHTML =
+      '<span class="ok">●</span> <span>' + I18N[LANG].healthOk + '</span>';
+  } catch (e) {
+    document.getElementById('healthInfo').innerHTML =
+      '<span class="bad">●</span> <span>' + I18N[LANG].healthBad + '</span>';
+  }
+}
+
+async function loadClones() {
+  try {
+    const res = await fetch('/v1/audio/clones');
+    if (!res.ok) return;
+    const d = await res.json();
+    const group = document.getElementById('cloneGroup');
+    group.innerHTML = '';
+    (d.clones || []).forEach(c => {
+      const o = document.createElement('option');
+      o.value = 'clone:' + c.name;
+      o.textContent = I18N[LANG].clonePrefix + ': ' + c.name;
+      group.appendChild(o);
+    });
+    group.hidden = !(d.clones || []).length;
+    if (!group.hidden) group.label = I18N[LANG].clonePrefix;
+  } catch (e) { /* clone registry optional */ }
+}
+
+// ── WAV-Encoder (16-bit PCM) ─────────────────────────────────────────────────
+function audioBufferToWav(ab) {
+  const numCh = ab.numberOfChannels, sr = ab.sampleRate, len = ab.length;
+  const buf = new ArrayBuffer(44 + len * numCh * 2);
+  const v = new DataView(buf);
+  const ws = (o, s) => { for (let i = 0; i < s.length; i++) v.setUint8(o + i, s.charCodeAt(i)); };
+  ws(0, 'RIFF'); v.setUint32(4, 36 + len * numCh * 2, true); ws(8, 'WAVE');
+  ws(12, 'fmt '); v.setUint32(16, 16, true); v.setUint16(20, 1, true);
+  v.setUint16(22, numCh, true); v.setUint32(24, sr, true);
+  v.setUint32(28, sr * numCh * 2, true); v.setUint16(32, numCh * 2, true); v.setUint16(34, 16, true);
+  ws(36, 'data'); v.setUint32(40, len * numCh * 2, true);
+  let off = 44;
+  const chans = [];
+  for (let c = 0; c < numCh; c++) chans.push(ab.getChannelData(c));
+  for (let i = 0; i < len; i++) {
+    for (let c = 0; c < numCh; c++) {
+      const s = Math.max(-1, Math.min(1, chans[c][i]));
+      v.setInt16(off, s < 0 ? s * 0x8000 : s * 0x7FFF, true);
+      off += 2;
+    }
+  }
+  return new Blob([buf], { type: 'audio/wav' });
+}
+
+// ── Mikrofon-Aufnahme ────────────────────────────────────────────────────────
+let mediaRecorder = null, recChunks = [], recStream = null, recTimer = null, recSecs = 0;
+let recordedRef = null; // {blob, name, secs}
+
+const micBtn = document.getElementById('micBtn');
+const recTimerEl = document.getElementById('recTimer');
+const recWrap = document.getElementById('recWrap');
+const recPlayer = document.getElementById('recPlayer');
+const recInfo = document.getElementById('recInfo');
+const MIC_SVG = micBtn.innerHTML;
+const STOP_SVG = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="none" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="1.5"/></svg>';
+
+function fmtTime(s) { return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0'); }
+
+function setMicUI(recording) {
+  micBtn.classList.toggle('recording', recording);
+  micBtn.innerHTML = recording ? STOP_SVG : MIC_SVG;
+  const t = I18N[LANG][recording ? 'micStopTitle' : 'micBtnTitle'];
+  micBtn.title = t; micBtn.setAttribute('aria-label', t);
+  if (!recording) recTimerEl.hidden = true;
+}
+
+function stopStream() {
+  if (recStream) { recStream.getTracks().forEach(tr => tr.stop()); recStream = null; }
+  if (recTimer) { clearInterval(recTimer); recTimer = null; }
+}
+
+async function toggleMic() {
+  if (mediaRecorder && mediaRecorder.state === 'recording') { mediaRecorder.stop(); return; }
+  try {
+    recStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  } catch (e) {
+    setStatus('error', I18N[LANG].micError + (e && e.name ? ' (' + e.name + ')' : ''));
+    return;
+  }
+  let mr;
+  try {
+    const mime = MediaRecorder.isTypeSupported('audio/webm;codecs=opus') ? 'audio/webm;codecs=opus' : '';
+    mr = new MediaRecorder(recStream, mime ? { mimeType: mime } : undefined);
+  } catch (e) {
+    stopStream();
+    setStatus('error', I18N[LANG].micError);
+    return;
+  }
+  mediaRecorder = mr;
+  recChunks = [];
+  mr.ondataavailable = e => { if (e.data.size) recChunks.push(e.data); };
+  mr.onstop = async () => {
+    stopStream();
+    const blob = new Blob(recChunks, { type: mr.mimeType || 'audio/webm' });
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      const ctx = new Ctx();
+      const ab = await ctx.decodeAudioData(await blob.arrayBuffer());
+      await ctx.close();
+      recordedRef = { blob: audioBufferToWav(ab), name: 'aufnahme.wav', secs: recSecs };
+      recPlayer.src = URL.createObjectURL(recordedRef.blob);
+      recInfo.textContent = I18N[LANG].recLabel.replace('{t}', fmtTime(recSecs));
+      recWrap.hidden = false;
+    } catch (e) {
+      setStatus('error', I18N[LANG].micDecodeErr);
+    }
+    setMicUI(false);
+  };
+  recSecs = 0;
+  recTimerEl.hidden = false;
+  recTimerEl.textContent = '● ' + fmtTime(0);
+  recTimer = setInterval(() => { recSecs++; recTimerEl.textContent = '● ' + fmtTime(recSecs); }, 1000);
+  mr.start(250);
+  setMicUI(true);
+}
+
+function getRefSource() {
+  if (recordedRef) return recordedRef;
+  const f = document.getElementById('refAudio');
+  if (f.files.length) return { blob: f.files[0], name: f.files[0].name };
+  return null;
+}
+
+// ── Aktionen ─────────────────────────────────────────────────────────────────
+async function generateSpeech() {
+  const text = document.getElementById('textInput').value.trim();
+  if (!text) { setStatus('error', I18N[LANG].errNoText); return; }
+  const instruct = document.getElementById('instructInput').value.trim();
+  const voice = instruct || document.getElementById('voiceSelect').value;
+  const btn = document.getElementById('generateBtn');
+  btn.disabled = true; btn.textContent = I18N[LANG].genBtnBusy;
+  audioWrap.classList.remove('show'); setLoading(I18N[LANG].generating);
+  try {
+    const res = await fetch('/v1/audio/speech', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'omnivoice', input: text, voice: voice })
+    });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || e.message || ('HTTP ' + res.status)); }
+    const blob = await res.blob();
+    if (blob.size === 0) { setStatus('error', I18N[LANG].emptyAudio); return; }
+    showAudio(blob); setStatus('success', I18N[LANG].done);
+  } catch (e) { setStatus('error', 'Error: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = I18N[LANG].genBtn; }
+}
+
+async function cloneVoice() {
+  const text = document.getElementById('textInput').value.trim();
+  const src = getRefSource();
+  const refText = document.getElementById('refText').value.trim();
+  if (!text) { setStatus('error', I18N[LANG].errNoText); return; }
+  if (!src) { setStatus('error', I18N[LANG].errNoRef); return; }
+  const btn = document.getElementById('cloneBtn');
+  btn.disabled = true; btn.textContent = I18N[LANG].cloneBtnBusy;
+  audioWrap.classList.remove('show'); setLoading(I18N[LANG].generating);
+  try {
+    const fd = new FormData();
+    fd.append('text', text);
+    fd.append('ref_audio', src.blob, src.name);
+    if (refText) fd.append('ref_text', refText);
+    const res = await fetch('/v1/audio/clone', { method: 'POST', body: fd });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || e.message || ('HTTP ' + res.status)); }
+    const blob = await res.blob();
+    if (blob.size === 0) { setStatus('error', I18N[LANG].emptyAudio); return; }
+    showAudio(blob); setStatus('success', I18N[LANG].done);
+  } catch (e) { setStatus('error', 'Error: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = I18N[LANG].cloneBtn; }
+}
+
+async function saveClone() {
+  const name = document.getElementById('cloneName').value.trim();
+  const src = getRefSource();
+  const refText = document.getElementById('refText').value.trim();
+  if (!name) { setStatus('error', I18N[LANG].errNoCloneName); return; }
+  if (!src) { setStatus('error', I18N[LANG].errNoRef); return; }
+  const btn = document.getElementById('saveCloneBtn');
+  btn.disabled = true; btn.textContent = I18N[LANG].saveBtnBusy;
+  try {
+    const fd = new FormData();
+    fd.append('name', name);
+    fd.append('ref_audio', src.blob, src.name);
+    if (refText) fd.append('ref_text', refText);
+    const res = await fetch('/v1/audio/clones', { method: 'POST', body: fd });
+    if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || e.message || ('HTTP ' + res.status)); }
+    setStatus('success', I18N[LANG].cloneSaved);
+    await loadClones();
+  } catch (e) { setStatus('error', 'Error: ' + e.message); }
+  finally { btn.disabled = false; btn.textContent = I18N[LANG].saveCloneBtn; }
+}
+
+document.getElementById('generateBtn').addEventListener('click', generateSpeech);
+document.getElementById('cloneBtn').addEventListener('click', cloneVoice);
+document.getElementById('saveCloneBtn').addEventListener('click', saveClone);
+micBtn.addEventListener('click', toggleMic);
+document.getElementById('refAudio').addEventListener('change', () => {
+  if (document.getElementById('refAudio').files.length) {
+    recordedRef = null;
+    recWrap.hidden = true;
+  }
+});
+applyLang();
+loadClones();
+checkHealth();
+setInterval(checkHealth, 30000);
+</script>
+</body>
+</html>
