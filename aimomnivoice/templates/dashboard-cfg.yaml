@@ -304,7 +304,7 @@ data:
           <h1><span class="ai">AI</span>mighty OmniVoice TTS</h1>
           <div class="subtitle" data-i18n="subtitle">OmniVoice 0.6B — 600+ Sprachen, Voice Design &amp; Cloning, 24 kHz</div>
         </div>
-        <div class="lang-toggle" role="group" aria-label="Sprache">
+        <div class="lang-toggle" role="group" data-i18n-aria="langGroup" aria-label="Sprache">
           <button type="button" id="langDE" class="active">DE</button>
           <button type="button" id="langEN">EN</button>
         </div>
@@ -323,7 +323,7 @@ data:
           <label class="fld" for="refAudio" data-i18n="refAudioLbl">Referenz-Audio (3–10 s, WAV/MP3/M4A)</label>
           <div class="ref-row">
             <input type="file" id="refAudio" accept="audio/*">
-            <button type="button" class="btn-icon" id="micBtn" data-i18n-title="micBtnTitle" title="Per Mikrofon aufnehmen" aria-label="Per Mikrofon aufnehmen">
+            <button type="button" class="btn-icon" id="micBtn" data-i18n-title="micBtnTitle" data-i18n-aria="micBtnTitle" title="Per Mikrofon aufnehmen" aria-label="Per Mikrofon aufnehmen">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
                 <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
@@ -350,7 +350,7 @@ data:
           <div class="card-title" id="voiceTitle"><span class="icon">◍</span><span data-i18n="voiceTitle">Stimme</span></div>
           <label class="fld" data-i18n="voiceLbl">Stimme (Preset)</label>
           <div class="voice-drop" id="voiceDrop">
-            <button type="button" class="voice-btn" id="voiceBtn" aria-haspopup="listbox" aria-expanded="false" aria-label="Stimme">
+            <button type="button" class="voice-btn" id="voiceBtn" aria-haspopup="listbox" aria-expanded="false" data-i18n-aria="voiceLbl" aria-label="Stimme">
               <span id="voiceBtnLabel">Weiblich</span>
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg>
             </button>
@@ -396,13 +396,18 @@ data:
       de: {
         subtitle: 'OmniVoice 0.6B — 600+ Sprachen, Voice Design & Cloning, 24 kHz',
         textTitle: 'Was soll ich sagen?', ttsPlaceholder: 'Text zum Sprechen eingeben…',
+        ttsDemo: 'Hallo, das ist ein Test der OmniVoice-Sprachsynthese.',
         voiceTitle: 'Voice Design', voiceLbl: 'Stimme (Preset)',
+        presetAuto: 'Auto', presetFemale: 'Weiblich', presetMale: 'Männlich', presetChild: 'Kind',
+        presetElderly: 'Ältere Stimme', presetWhisper: 'Flüstern',
+        presetFemaleUS: 'Weiblich (US)', presetMaleUS: 'Männlich (US)',
+        presetFemaleUK: 'Weiblich (UK)', presetMaleUK: 'Männlich (UK)',
         instructLbl: 'Beschreibung', instructPh: 'Freie Beschreibung, z. B. "weiblich, ruhig"',
         ttsHint: 'Freie Beschreibung überschreibt die Preset-Auswahl.',
         cloneTitle: 'Voice Cloning',
         refAudioLbl: 'Referenz-Audio (3–10 s, WAV/MP3/M4A)',
         micBtnTitle: 'Per Mikrofon aufnehmen', micStopTitle: 'Aufnahme stoppen',
-        recording: 'Aufnahme', recLabel: 'Aufnahme · {t} · WAV',
+        recLabel: 'Aufnahme · {t} · WAV',
         refTextLbl: 'Referenz-Transkript (exakter Text)',
         refTextPh: 'Was im Referenz-Audio gesagt wird …',
         cloneNameLbl: 'Klon-Name', cloneNamePh: 'Klon-Name, z. B. justus',
@@ -418,17 +423,23 @@ data:
         clonePrefix: 'Klon', deleteCloneTitle: 'Klon löschen', cloneDeleted: 'Klon gelöscht.',
         generating: 'Audio wird erzeugt…',
         done: 'Fertig', size: 'Größe', emptyAudio: '(leeres Audio)',
+        errPrefix: 'Fehler:', langGroup: 'Sprache',
       },
       en: {
         subtitle: 'OmniVoice 0.6B — 600+ languages, voice design & cloning, 24 kHz',
         textTitle: 'What should I say?', ttsPlaceholder: 'Enter text to synthesize…',
+        ttsDemo: 'Hello, this is a test of the OmniVoice speech synthesis.',
         voiceTitle: 'Voice Design', voiceLbl: 'Voice (preset)',
+        presetAuto: 'Auto', presetFemale: 'Female', presetMale: 'Male', presetChild: 'Child',
+        presetElderly: 'Elderly voice', presetWhisper: 'Whisper',
+        presetFemaleUS: 'Female (US)', presetMaleUS: 'Male (US)',
+        presetFemaleUK: 'Female (UK)', presetMaleUK: 'Male (UK)',
         instructLbl: 'Description', instructPh: 'Free-form description, e.g. "female, calm"',
         ttsHint: 'A free-form description overrides the preset selection.',
         cloneTitle: 'Voice Cloning',
         refAudioLbl: 'Reference audio (3–10 s, WAV/MP3/M4A)',
         micBtnTitle: 'Record from microphone', micStopTitle: 'Stop recording',
-        recording: 'Recording', recLabel: 'Recording · {t} · WAV',
+        recLabel: 'Recording · {t} · WAV',
         refTextLbl: 'Reference transcript (exact text)',
         refTextPh: 'What is spoken in the reference audio …',
         cloneNameLbl: 'Clone name', cloneNamePh: 'Clone name, e.g. justus',
@@ -444,9 +455,11 @@ data:
         clonePrefix: 'Clone', deleteCloneTitle: 'Delete clone', cloneDeleted: 'Clone deleted.',
         generating: 'Generating audio…',
         done: 'Done', size: 'Size', emptyAudio: '(empty audio)',
+        errPrefix: 'Error:', langGroup: 'Language',
       }
     };
     let LANG = 'de';
+    let textTouched = false;
     function applyLang() {
       document.querySelectorAll('[data-i18n]').forEach(el => {
         const k = el.getAttribute('data-i18n'); if (I18N[LANG][k]) el.textContent = I18N[LANG][k];
@@ -457,9 +470,18 @@ data:
       document.querySelectorAll('[data-i18n-title]').forEach(el => {
         const k = el.getAttribute('data-i18n-title'); if (I18N[LANG][k]) el.title = I18N[LANG][k];
       });
+      document.querySelectorAll('[data-i18n-aria]').forEach(el => {
+        const k = el.getAttribute('data-i18n-aria'); if (I18N[LANG][k]) el.setAttribute('aria-label', I18N[LANG][k]);
+      });
+      const ti = document.getElementById('textInput');
+      if (!textTouched) ti.value = I18N[LANG].ttsDemo;
+      if (recordedRef && !document.getElementById('recWrap').hidden) {
+        document.getElementById('recInfo').textContent = I18N[LANG].recLabel.replace('{t}', fmtTime(recSecs));
+      }
       document.getElementById('langDE').classList.toggle('active', LANG === 'de');
       document.getElementById('langEN').classList.toggle('active', LANG === 'en');
       document.documentElement.lang = LANG;
+      setMicUI(!!(mediaRecorder && mediaRecorder.state === 'recording'));
       renderVoiceList();
     }
     document.getElementById('langDE').addEventListener('click', () => { LANG = 'de'; applyLang(); });
@@ -492,10 +514,10 @@ data:
 
     // ── Voice-Dropdown (Presets + Clones mit Löschen) ────────────────────────────
     const PRESETS = [
-      ['auto', 'Auto'], ['female', 'Weiblich'], ['male', 'Männlich'], ['child', 'Kind'],
-      ['elderly', 'Ältere Stimme'], ['whisper', 'Flüstern'],
-      ['female_en', 'Weiblich (US)'], ['male_en', 'Männlich (US)'],
-      ['female_br', 'Weiblich (UK)'], ['male_br', 'Männlich (UK)'],
+      ['auto', 'presetAuto'], ['female', 'presetFemale'], ['male', 'presetMale'], ['child', 'presetChild'],
+      ['elderly', 'presetElderly'], ['whisper', 'presetWhisper'],
+      ['female_en', 'presetFemaleUS'], ['male_en', 'presetMaleUS'],
+      ['female_br', 'presetFemaleUK'], ['male_br', 'presetMaleUK'],
     ];
     let currentVoice = 'female';
     let clones = [];
@@ -506,7 +528,7 @@ data:
     function voiceLabelFor(val) {
       if (val.startsWith('clone:')) return I18N[LANG].clonePrefix + ': ' + val.slice(6);
       const p = PRESETS.find(p => p[0] === val);
-      return p ? p[1] : val;
+      return p ? I18N[LANG][p[1]] : val;
     }
 
     function renderVoiceList() {
@@ -516,7 +538,7 @@ data:
         d.className = 'voice-opt';
         d.setAttribute('role', 'option');
         d.setAttribute('aria-selected', String(val === currentVoice));
-        d.textContent = label;
+        d.textContent = I18N[LANG][label];
         d.addEventListener('click', () => { currentVoice = val; renderVoiceList(); closeVoiceList(); });
         voiceList.appendChild(d);
       });
@@ -567,7 +589,7 @@ data:
         if (currentVoice === 'clone:' + name) currentVoice = 'female';
         await loadClones();
         setStatus('success', I18N[LANG].cloneDeleted);
-      } catch (e) { setStatus('error', 'Error: ' + e.message); }
+      } catch (e) { setStatus('error', I18N[LANG].errPrefix + ' ' + e.message); }
     }
 
     async function loadClones() {
@@ -701,7 +723,7 @@ data:
         const blob = await res.blob();
         if (blob.size === 0) { setStatus('error', I18N[LANG].emptyAudio); return; }
         showAudio(blob); setStatus('success', I18N[LANG].done);
-      } catch (e) { setStatus('error', 'Error: ' + e.message); }
+      } catch (e) { setStatus('error', I18N[LANG].errPrefix + ' ' + e.message); }
       finally { btn.disabled = false; btn.textContent = I18N[LANG].genBtn; }
     }
 
@@ -722,13 +744,14 @@ data:
         if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e.detail || e.message || ('HTTP ' + res.status)); }
         setStatus('success', I18N[LANG].cloneSaved);
         await loadClones();
-      } catch (e) { setStatus('error', 'Error: ' + e.message); }
+      } catch (e) { setStatus('error', I18N[LANG].errPrefix + ' ' + e.message); }
       finally { btn.disabled = false; btn.textContent = I18N[LANG].saveCloneBtn; }
     }
 
     document.getElementById('generateBtn').addEventListener('click', generateSpeech);
     document.getElementById('saveCloneBtn').addEventListener('click', saveClone);
     micBtn.addEventListener('click', toggleMic);
+    document.getElementById('textInput').addEventListener('input', () => { textTouched = true; });
     document.getElementById('refAudio').addEventListener('change', () => {
       if (document.getElementById('refAudio').files.length) {
         recordedRef = null;

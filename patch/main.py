@@ -143,10 +143,25 @@ VOICE_PRESETS: dict = {
 }
 
 
+# OpenAI's standard voice names have no meaning for OmniVoice's instruct-based
+# voice design — clients (Open WebUI, Wings, SillyTavern) send them by default.
+# Map them to the model's default voice instead of failing.
+_OPENAI_VOICE_NAMES = frozenset({
+    "alloy", "ash", "ballad", "cedar", "coral", "echo", "fable",
+    "juniper", "nova", "onyx", "sage", "shimmer", "verse", "zephyr",
+})
+
+
 def resolve_instruct(voice: str) -> Optional[str]:
     if voice in VOICE_PRESETS:
         return VOICE_PRESETS[voice]
-    return voice if voice and voice != "auto" else None
+    v = (voice or "").strip()
+    if not v or v == "auto":
+        return None
+    if v.lower() in _OPENAI_VOICE_NAMES:
+        logger.warning("TTS: OpenAI voice name %r has no OmniVoice equivalent — using model default voice", voice)
+        return None
+    return v
 
 
 # ── Named voice clones (voice: "clone:<name>") ────────────────────────────────
@@ -377,6 +392,18 @@ async def openai_tts(req: SpeechRequest):
             kwargs["speed"] = req.speed
 
         audio_list = omnivoice_model.generate(**kwargs)
+    except ValueError as e:
+        if instruct and "instruct" in str(e).lower():
+            logger.warning("TTS: instruct %r rejected by model — retrying with model default voice", instruct)
+            kwargs.pop("instruct", None)
+            try:
+                audio_list = omnivoice_model.generate(**kwargs)
+            except Exception as e2:
+                logger.exception("TTS generation failed (retry)")
+                raise HTTPException(500, str(e2))
+        else:
+            logger.exception("TTS generation failed")
+            raise HTTPException(500, str(e))
     except Exception as e:
         logger.exception("TTS generation failed")
         raise HTTPException(500, str(e))
