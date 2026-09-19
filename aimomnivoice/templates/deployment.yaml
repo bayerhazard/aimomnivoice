@@ -8,7 +8,7 @@ data:
   MODEL_ID: {{ .Values.env.MODEL_ID | quote }}
   DEVICE: {{ .Values.env.DEVICE | quote }}
   HF_HOME: {{ .Values.env.HF_HOME | quote }}
-  CUDA_DEVICE_MEMORY_LIMIT_0: {{ .Values.env.CUDA_DEVICE_MEMORY_LIMIT_0 | quote }}
+  CUDA_DEVICE_MEMORY_LIMIT_0: "5120m"
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -107,7 +107,16 @@ spec:
           - containerPort: {{ .Values.apiPort }}
             name: api
         resources:
-            {{- toYaml .Values.resources | nindent 10 }}
+          limits:
+            cpu: "8"
+            memory: 16Gi
+            nvidia.com/gpu: "1"
+            nvidia.com/gpumem: "5120"
+          requests:
+            cpu: "2"
+            memory: 6Gi
+            nvidia.com/gpu: "1"
+            nvidia.com/gpumem: "5120"
         volumeMounts:
           - name: models
             mountPath: /app/models
