@@ -12,7 +12,7 @@ metadata:
   icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
   description: OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
   title: AIM OmniVoice 0.6B TTS
-  version: '26.9.1'
+  version: '26.9.2'
   categories:
     - Audio
 
@@ -26,9 +26,9 @@ entrances:
     authLevel: internal
 
 spec:
-  versionName: '26.9.1'
+  versionName: '26.9.2'
   upgradeDescription: |
-    Initial Release for AImighty Olares One
+    v26.9.2: HAMi memory-slice pinned to 5 GiB (nvidia.com/gpumem) and the CUDA soft cap aligned to 5120m so the RTX 5090 on olares-worker can host OmniVoice TTS, Qwen3-ASR, PaddleOCR and the Qwen3 Reranker co-resident. Built for Olares 1.12.6.
   fullDescription: |
     **OmniVoice-0.6B** — k2-fsa's massively multilingual zero-shot TTS (600+ languages) based on a Qwen3-0.6B diffusion language model.
 
@@ -56,7 +56,7 @@ spec:
     ```
 
     **Resource Usage**
-    GPU: 1× NVIDIA (~4 GB VRAM)
+    GPU: 1× NVIDIA (5 GiB HAMi memory slice, co-resident with Qwen3-ASR, PaddleOCR and the Qwen3 Reranker)
     RAM: 6-16 GB, CPU: 2-8 cores
     Disk: 20 GB (model cache)
 

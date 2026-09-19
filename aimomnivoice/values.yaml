@@ -32,9 +32,12 @@ resources:
     cpu: "8"
     memory: 16Gi
     nvidia.com/gpu: "1"
+    nvidia.com/gpumem: "5120"
   requests:
     cpu: "2"
     memory: 6Gi
+    nvidia.com/gpu: "1"
+    nvidia.com/gpumem: "5120"
 nginxResources:
   limits:
     cpu: 200m
@@ -47,7 +50,7 @@ env:
   MODEL_ID: k2-fsa/OmniVoice
   DEVICE: cuda:0
   HF_HOME: /app/models
-  CUDA_DEVICE_MEMORY_LIMIT_0: "12000m"
+  CUDA_DEVICE_MEMORY_LIMIT_0: "5120m"
 
 # Olares-injected environment variables (from OlaresManifest envs:).
 # Default present so standalone `helm template` renders without nil pointer;
