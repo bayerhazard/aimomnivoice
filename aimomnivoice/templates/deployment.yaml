@@ -92,6 +92,24 @@ spec:
       labels:
         app: aimomnivoice
     spec:
+      # Model Console (llm-init) runs as UID 1000 and must own its shared cache
+      # + run-state dirs; the hostPath mounts arrive root-owned.
+      initContainers:
+      - name: init-chown
+        image: docker.io/beclab/aboveos-busybox:1.37.0
+        imagePullPolicy: IfNotPresent
+        command:
+        - sh
+        - -c
+        - "mkdir -p /cache/hf/hub/.locks /run/llm-init && chown -R 1000:1000 /cache/hf/hub /run/llm-init || true"
+        volumeMounts:
+        - name: llm-init-cache
+          mountPath: /cache/hf/hub
+        - name: llm-init-run
+          mountPath: /run/llm-init
+        securityContext:
+          runAsUser: 0
+        resources: {}
       containers:
       # Container 1: OmniVoice FastAPI runtime
       - name: omnivoice-api
@@ -165,10 +183,89 @@ spec:
             mountPath: /opt/tts-transcode.py
             subPath: tts-transcode.py
 
+      # Container 4: Model Console (llm-init) — Router-visible TTS data plane.
+      # ENGINE_KIND=audio + MODEL_MODE=tts proxies to the sibling omnivoice-api
+      # via LLM_INIT_TEST_ENGINE_URL (no service rename). It downloads the model
+      # into the shared appCommon HF cache (redundant with the baked weights,
+      # but that is what Model Console requires).
+      - name: llm-init
+        image: "docker.io/beclab/llm-init:v1.7.12"
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ENGINE_KIND
+            value: "audio"
+          - name: LLM_INIT_TEST_ENGINE_URL
+            value: "http://127.0.0.1:{{ .Values.apiPort }}"
+          - name: MODEL_NAME
+            value: "omnivoice"
+          - name: MODEL_MODE
+            value: "tts"
+          - name: MODEL_SUPPORTS
+            value: "supports_tts,supports_tts_clone,supports_tts_design,supports_tts_custom"
+          - name: MODEL_SOURCE
+            value: "hf://k2-fsa/OmniVoice"
+          - name: HF_HOME
+            value: /cache/hf
+          - name: HF_HUB_CACHE
+            value: /cache/hf/hub
+          - name: HUGGINGFACE_HUB_CACHE
+            value: /cache/hf/hub
+          {{- if .Values.olaresEnv.HF_ENDPOINT }}
+          - name: HF_ENDPOINT
+            value: "{{ .Values.olaresEnv.HF_ENDPOINT }}"
+          {{- end }}
+          {{- if .Values.olaresEnv.HF_TOKEN }}
+          - name: HF_TOKEN
+            value: "{{ .Values.olaresEnv.HF_TOKEN }}"
+          {{- end }}
+          - name: RUN_DIR
+            value: /run/llm-init
+          - name: PORT
+            value: "8090"
+          - name: LOG_LEVEL
+            value: "info"
+        ports:
+          - containerPort: 8090
+            name: model-console
+        readinessProbe:
+          httpGet:
+            path: /livez
+            port: 8090
+          initialDelaySeconds: 3
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        livenessProbe:
+          httpGet:
+            path: /livez
+            port: 8090
+          periodSeconds: 30
+          timeoutSeconds: 5
+        resources:
+          requests:
+            cpu: 200m
+            memory: 256Mi
+          limits:
+            cpu: "1"
+            memory: 4Gi
+        volumeMounts:
+          - name: llm-init-cache
+            mountPath: /cache/hf/hub
+          - name: llm-init-run
+            mountPath: /run/llm-init
+
       volumes:
         - name: models
           hostPath:
             path: {{ .Values.userspace.appData }}/models/omnivoice
+            type: DirectoryOrCreate
+        - name: llm-init-cache
+          hostPath:
+            path: {{ .Values.userspace.appCommon }}/huggingface
+            type: DirectoryOrCreate
+        - name: llm-init-run
+          hostPath:
+            path: {{ .Values.userspace.appCache }}/llm-init-run/aimomnivoice
             type: DirectoryOrCreate
         - name: dshm
           emptyDir:
@@ -216,3 +313,39 @@ spec:
       protocol: TCP
   selector:
     app: aimomnivoice
+---
+# Model Console control/data plane (llm-init): dashboard on "/", engine /v1/*
+# reverse-proxied; authLevel internal.
+apiVersion: v1
+kind: Service
+metadata:
+  name: download-svc
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: aimomnivoice
+spec:
+  selector:
+    app: aimomnivoice
+  ports:
+    - name: http
+      port: 8090
+      targetPort: 8090
+      protocol: TCP
+---
+# The Service behind the sharedEntrances stub: :80 -> llm-init:8090,
+# in-cluster only (no edge, no SSO).
+apiVersion: v1
+kind: Service
+metadata:
+  name: sharedentrances-api
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: aimomnivoice
+spec:
+  selector:
+    app: aimomnivoice
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8090
+      protocol: TCP

@@ -12,22 +12,34 @@ metadata:
   icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
   description: OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
   title: AIM OmniVoice 0.6B TTS
-  version: '26.9.3'
+  version: '26.9.4'
   categories:
     - Audio
 
+# Internal shared API for Router / in-cluster callers (Model Console data plane).
+sharedEntrances:
+  - name: aimomnivoice
+    host: sharedentrances-api
+    port: 0
+    title: AIM OmniVoice 0.6B TTS
+    invisible: true
+    authLevel: internal
+    icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
+
 entrances:
   - name: aimomnivoice
-    port: 8080
-    host: aimomnivoice
+    port: 8090
+    host: download-svc
     title: AIM OmniVoice 0.6B TTS
     icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
     openMethod: window
     authLevel: internal
 
 spec:
-  versionName: '26.9.3'
+  versionName: '26.9.4'
+  onlyAdmin: true
   upgradeDescription: |
+    v26.9.4: Olares Router integration. A beclab/llm-init sidecar now fronts the app (ENGINE_KIND=audio, MODEL_MODE=tts, MODEL_SUPPORTS=supports_tts,supports_tts_clone,supports_tts_design,supports_tts_custom) and serves the Model Console contract (/api/model-spec) on the shared entrance, so Router auto-discovers the model and fills the default-tts categories. Inference path and voice quality are unchanged. Built for Olares 1.12.7.
     v26.9.3: GPU resources + CUDA cap hardcoded in the template (dodges the Olares values-freeze on upgrade) - HAMi memory slice 5 GiB.
     v26.9.2: HAMi memory-slice pinned to 5 GiB (nvidia.com/gpumem) and the CUDA soft cap aligned to 5120m so the RTX 5090 on olares-worker can host OmniVoice TTS, Qwen3-ASR, PaddleOCR and the Qwen3 Reranker co-resident. Built for Olares 1.12.6.
   fullDescription: |
@@ -79,8 +91,15 @@ spec:
 
 permission:
   appData: true
+  appCache: true
+  appCommon: true
 
 envs:
+  - envName: HF_ENDPOINT
+    required: false
+    applyOnChange: false
+    valueFrom:
+      envName: OLARES_SYSTEM_HUGGINGFACE_ENDPOINT
   - envName: HF_TOKEN
     required: false
     applyOnChange: true
@@ -90,6 +109,9 @@ envs:
 options:
   apiTimeout: 0
   allowMultipleInstall: false
+  LLMGatewaySupported: true
+  shared: true
+  templateOnly: false
   dependencies:
     - name: olares
       version: '>=1.12.6-0'
