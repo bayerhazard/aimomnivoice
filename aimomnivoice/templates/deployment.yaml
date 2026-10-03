@@ -18,53 +18,96 @@ metadata:
 data:
   tts-transcode.py: |
     #!/usr/bin/env python3
-    # TTS -> MP3 transcode proxy.
-    # OmniVoice returns WAV/FLAC/OGG, but LiteLLM hardcodes Content-Type:
-    # audio/mpeg for OpenAI TTS backends. Re-encode to real MP3 so the
-    # client/browser decodes correctly.
+    # TTS-Formatproxy vor der OmniVoice-API.
+    # Die Engine liefert WAV/FLAC/OGG; mp3 und opus kann sie nicht und
+    # antwortet dann mit WAV-Bytes unter Content-Type audio/mpeg
+    # (siehe audio_to_bytes() in main.py). Clients, die sich auf
+    # response_format verlassen -- Rocket z.B. schneidet MP3-Rahmen --
+    # bekommen damit unbrauchbaren Ton. Dieser Proxy re-encodiert nur die
+    # Formate, die die Engine nicht selbst kann; wav/flac/ogg gehen
+    # unveraendert durch.
+    import json
+    import re
     import subprocess
     import urllib.request
     from http.server import BaseHTTPRequestHandler, HTTPServer
+    from urllib.parse import urlsplit
 
     BACKEND = "http://127.0.0.1:{{ .Values.apiPort }}"
 
+    MIME = {
+        "wav": "audio/wav",
+        "mp3": "audio/mpeg",
+        "flac": "audio/flac",
+        "ogg": "audio/ogg",
+        "opus": "audio/ogg",
+    }
+    FFMPEG_ARGS = {
+        "mp3": ["-c:a", "libmp3lame", "-b:a", "128k", "-f", "mp3"],
+        "opus": ["-c:a", "libopus", "-b:a", "96k", "-f", "ogg"],
+    }
+
+
+    def format_aus_body(body):
+        """response_format lesen: JSON zuerst, sonst multipart/urlencoded."""
+        rohtext = body.decode("utf-8", "replace")
+        try:
+            wert = json.loads(rohtext).get("response_format")
+            if wert:
+                return str(wert).lower()
+        except Exception:
+            pass
+        m = re.search(r'response_format["\']?\s*(?::|=|\r?\n\r?\n)\s*["\']?([a-zA-Z]+)', rohtext)
+        return m.group(1).strip().lower() if m else "wav"
+
+
     class Handler(BaseHTTPRequestHandler):
         def do_POST(self):
-            if self.path != "/v1/audio/speech":
+            # Nur der Pfad entscheidet; ein Query-String (?model=...) ist
+            # erlaubt und wird weitergereicht (z.B. `router call speak`).
+            teile = urlsplit(self.path)
+            if teile.path != "/v1/audio/speech":
                 self.send_error(404)
                 return
             length = int(self.headers.get("Content-Length", 0) or 0)
             body = self.rfile.read(length)
+            fmt = format_aus_body(body)
+
+            ziel = BACKEND + "/v1/audio/speech" + (("?" + teile.query) if teile.query else "")
             req = urllib.request.Request(
-                BACKEND + "/v1/audio/speech",
+                ziel,
                 data=body,
                 headers={"Content-Type": self.headers.get("Content-Type", "application/json")},
                 method="POST",
             )
             try:
                 with urllib.request.urlopen(req, timeout=300) as resp:
-                    wav = resp.read()
+                    audio = resp.read()
+                    upstream_type = (resp.headers.get("Content-Type") or "").split(";")[0].strip()
             except Exception:
                 self.send_error(502)
                 return
-            proc = subprocess.run(
-                ["ffmpeg", "-loglevel", "error", "-i", "-",
-                 "-c:a", "libmp3lame", "-b:a", "128k", "-f", "mp3", "-"],
-                input=wav, capture_output=True,
-            )
-            if proc.returncode == 0 and proc.stdout:
-                self.send_response(200)
-                self.send_header("Content-Type", "audio/mpeg")
-                self.send_header("Content-Length", str(len(proc.stdout)))
-                self.end_headers()
-                self.wfile.write(proc.stdout)
-            else:
-                # fallback: pass the original audio through
-                self.send_response(200)
-                self.send_header("Content-Type", "audio/wav")
-                self.send_header("Content-Length", str(len(wav)))
-                self.end_headers()
-                self.wfile.write(wav)
+
+            args = FFMPEG_ARGS.get(fmt)
+            if args:
+                proc = subprocess.run(
+                    ["ffmpeg", "-loglevel", "error", "-i", "-"] + args + ["-"],
+                    input=audio, capture_output=True,
+                )
+                if proc.returncode == 0 and proc.stdout:
+                    self._audio(MIME.get(fmt, "application/octet-stream"), proc.stdout)
+                    return
+                # ffmpeg nicht moeglich: Original kommt als WAV -- ehrlich ausliefern.
+                self._audio("audio/wav", audio)
+                return
+            self._audio(upstream_type or MIME.get(fmt, "audio/wav"), audio)
+
+        def _audio(self, ctype, data):
+            self.send_response(200)
+            self.send_header("Content-Type", ctype)
+            self.send_header("Content-Length", str(len(data)))
+            self.end_headers()
+            self.wfile.write(data)
 
         def log_message(self, fmt, *args):
             pass
@@ -194,8 +237,12 @@ spec:
         env:
           - name: ENGINE_KIND
             value: "audio"
+          # Zeigt auf nginx (dashboardPort), nicht direkt auf die API (apiPort):
+          # nginx leitet /v1/audio/speech an den Format-Proxy (transcodePort) und
+          # alles andere an die API. Ueber die reine API kaeme mp3/opus als WAV
+          # mit falschem Content-Type zurueck (siehe tts-transcode.py).
           - name: LLM_INIT_TEST_ENGINE_URL
-            value: "http://127.0.0.1:{{ .Values.apiPort }}"
+            value: "http://127.0.0.1:{{ .Values.dashboardPort }}"
           - name: MODEL_NAME
             value: "omnivoice"
           - name: MODEL_MODE
