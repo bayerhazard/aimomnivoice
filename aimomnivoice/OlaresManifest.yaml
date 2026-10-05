@@ -12,7 +12,7 @@ metadata:
   icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
   description: OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
   title: AIM OmniVoice 0.6B TTS
-  version: '26.10.1'
+  version: '26.10.2'
   categories:
     - Audio
 
@@ -36,9 +36,10 @@ entrances:
     authLevel: internal
 
 spec:
-  versionName: '26.10.1'
+  versionName: '26.10.2'
   onlyAdmin: true
   upgradeDescription: |
+    v26.10.2: CPU request right-sized (requiredCpu 2 -> 1500m; measured peak 1.14 cores) so the app fits the worker node CPU-request budget. No behavior change. Built for Olares 1.12.7.
     v26.10.1: Formatbewusster TTS-Proxy. mp3 und opus kann die Engine nicht selbst und antwortete bisher mit WAV-Bytes unter Content-Type audio/mpeg; der Proxy re-encodiert diese per ffmpeg, wav/flac/ogg gehen unveraendert durch. Der Model-Console-Proxy zeigt jetzt auf nginx statt direkt auf die API, damit Format und Content-Type fuer alle Aufrufer (Router, Rocket, Open WebUI, Wings) stimmen; /openapi.json und /docs bleiben ueber nginx als JSON erreichbar. Built for Olares 1.12.7.
     v26.9.5: mp3/opus kamen bisher als WAV mit falschem Content-Type aus der Engine. Der Model-Console-Proxy zeigte direkt auf die API (apiPort 8880) und umging damit den Format-Proxy; er zeigt jetzt auf nginx (dashboardPort 8080), der /v1/audio/speech an den Format-Proxy und alles andere an die API leitet. Der Format-Proxy ist formatbewusst: mp3/opus werden per ffmpeg encodiert, wav/flac/ogg gehen unveraendert durch. Damit stimmen Format und Content-Type fuer alle Aufrufer (Router, Rocket, Open WebUI, Wings).
     v26.9.4: Olares Router integration. A beclab/llm-init sidecar now fronts the app (ENGINE_KIND=audio, MODEL_MODE=tts, MODEL_SUPPORTS=supports_tts,supports_tts_clone,supports_tts_design,supports_tts_custom) and serves the Model Console contract (/api/model-spec) on the shared entrance, so Router auto-discovers the model and fills the default-tts categories. Inference path and voice quality are unchanged. Built for Olares 1.12.7.
@@ -83,7 +84,7 @@ spec:
     - en-US
   supportArch:
     - amd64
-  requiredCpu: "2"
+  requiredCpu: "1500m"
   limitedCpu: "8"
   requiredMemory: 6Gi
   limitedMemory: 16Gi
