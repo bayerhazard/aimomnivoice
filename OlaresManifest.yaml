@@ -12,7 +12,7 @@ metadata:
   icon: https://raw.githubusercontent.com/bayerhazard/aimomnivoice/main/icon.png
   description: OmniVoice 0.6B TTS — zero-shot voice cloning, voice design, 600+ languages, OpenAI-compatible API
   title: AIM OmniVoice 0.6B TTS
-  version: '26.10.2'
+  version: '26.10.3'
   categories:
     - Audio
 
@@ -36,7 +36,7 @@ entrances:
     authLevel: internal
 
 spec:
-  versionName: '26.10.2'
+  versionName: '26.10.3'
   onlyAdmin: true
   upgradeDescription: |
     v26.10.2: CPU request right-sized (requiredCpu 2 -> 1500m; measured peak 1.14 cores) so the app fits the worker node CPU-request budget. No behavior change. Built for Olares 1.12.7.
